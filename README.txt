@@ -1,173 +1,123 @@
 # UniSync
-## Project Setup and Git Collaboration Guide
 
-Welcome to the UniSync project!
+**A Web-Based University Event and Organization Scheduling System**
 
-This guide explains how to:
-- Clone the project repository.
-- Set up your local development environment.
-- Create your own `.env` file.
-- Connect the project to PostgreSQL.
-- Run the application locally.
-- Commit and push your changes to GitHub.
-- Work with the rest of the team without overwriting each other's work.
+UniSync is a web-based platform designed to help students discover university events, register for activities, and keep track of their schedules. It also allows student organizations to manage their events, members, and registrations in one place.
 
-Please follow these instructions before starting your assigned tasks.
+The project is being developed using **PHP, PostgreSQL, HTML, Tailwind CSS, and jQuery**.
 
 ---
 
-# 1. Requirements
+## 1. Features
 
-Make sure you have these installed:
+### Student Features
+- Create an account and log in.
+- Browse and search university events.
+- Search for student organizations through events.
+- Sort and filter events.
+- View event details, including schedules and venues.
+- Register for public events.
+- View and track registered events through a student dashboard.
+- Update basic account information.
 
-| Software | Purpose |
+### Organization Features
+- Create and manage student organizations.
+- Manage organization memberships.
+- Create, edit, and manage organization events.
+- View students registered for an event.
+- View organization members and their registration status for an event.
+
+### Event Management
+Events have the following statuses:
+- Pending
+- Confirmed
+- Cancelled
+- Completed
+
+The system also checks for scheduling conflicts involving the same venue and date.
+
+---
+
+## 2. Technology Stack
+
+| Technology | Purpose |
 |---|---|
-| Git | Clone, commit, and push project changes. |
-| PHP | Run the backend. |
-| PostgreSQL | Store application data. |
-| pgAdmin or psql | Manage and execute PostgreSQL scripts. |
-| Visual Studio Code | Recommended code editor. |
-| Web browser | Test the application. |
-
-You also need access to the UniSync GitHub repository.
-
-Make sure PHP and PostgreSQL are accessible from your terminal.
-
-You can check your installations using:
-
-```bash
-git --version
-php -v
-psql --version
-```
-
-If a command is not recognized, check whether the software is installed and added to your system PATH.
+| PHP | Backend development |
+| PostgreSQL | Database management |
+| HTML | Page structure |
+| Tailwind CSS | Styling and layout |
+| jQuery | Frontend interactions and AJAX |
 
 ---
 
-# 2. Clone the Repository
+## 3. Project Structure
 
-You should work from the group's shared GitHub repository.
+The project structure is still being developed and may change as UniSync grows.
 
-Do not create a separate project or download the repository as a ZIP unless specifically instructed.
+**Do not assume that files will always stay in their current folders.** Before creating or modifying files, check the latest version of the repository and follow its existing organization.
 
-Open your terminal or VS Code terminal.
+Some important files may include:
 
-Run:
+| File | Purpose |
+|---|---|
+| `.env` | Contains your local database credentials and environment settings. |
+| `.env.example` | Shared example of the required environment variables. |
+| `.gitignore` | Specifies files Git should not upload. |
+| `README.md` | Project documentation and setup guide. |
+| Database initialization SQL | Contains the database tables and constraints. |
+| Database seed SQL | Contains sample data for development and testing. |
+| Database connection file | Handles the application's PostgreSQL connection. |
+
+File names and locations may change as development continues. Check the repository before relying on any specific path.
+
+---
+
+## 4. Requirements
+
+Before running the project, make sure you have:
+
+- PHP installed.
+- PostgreSQL installed and running.
+- A database management tool such as pgAdmin (optional, but recommended).
+- Git installed.
+- Visual Studio Code or another code editor.
+- A web browser.
+
+Make sure your PHP installation has the PostgreSQL PDO extension enabled (`pdo_pgsql`).
+
+---
+
+## 5. Getting Started
+
+### Step 1: Clone the Repository
+
+Open a terminal and clone the shared repository:
 
 ```bash
-git clone YOUR_REPOSITORY_URL
+git clone <repository-url>
 ```
 
-Replace `YOUR_REPOSITORY_URL` with the repository link provided by the group.
-
-Example:
+Enter the project directory:
 
 ```bash
-git clone https://github.com/USERNAME/unisync.git
+cd <project-folder>
 ```
 
-Enter the project folder:
-
-```bash
-cd unisync
-```
-
-Open it in VS Code:
+Open the project in Visual Studio Code:
 
 ```bash
 code .
 ```
 
-You should now have your own local copy of the UniSync project.
+Replace the placeholders with the actual repository URL and folder name.
 
-**Important:** Your local copy is connected to the shared Git repository. This allows you to download other people's changes and upload your own.
+### Step 2: Configure Environment Variables
 
----
+Find the `.env.example` file in the repository.
 
-# 3. Project Structure
+Create your own `.env` file using it as a reference. If the project uses a different configuration method, follow the current implementation.
 
-The UniSync project structure is still being developed and may change as the system grows.
-
-Rather than following a fixed folder structure, always check the latest version of the repository before creating or modifying files.
-
-### General guidelines
-
-- Keep related files organized together.
-- Follow the existing naming conventions.
-- Check where similar pages or files are located before creating new ones.
-- Avoid creating duplicate folders or files.
-- Coordinate with the group before moving or renaming shared files.
-- Keep configuration files, database scripts, frontend pages, and backend processing organized.
-
-### Important files
-
-Some important project files include:
-
-- `.env` - Your personal local environment configuration. Never upload this file.
-- `.env.example` - A template showing the environment variables required by the project.
-- `.gitignore` - Specifies files Git should ignore.
-- `README.md` - Project setup and collaboration instructions.
-- `config/db.php` - Handles the PostgreSQL database connection.
-- `db/init.sql` - Contains the database initialization script.
-- `db/seed.sql` - Contains sample data for testing.
-
-These filenames describe the intended purpose of the files. Their locations may change as the project develops, so always check the latest repository.
-
-**If you're unsure where to put a new file, ask the group before creating a new folder or changing the existing structure.**
----
-
-# 4. Create Your Own .env File
-
-Every developer must create their own local `.env` file.
-
-The `.env` file contains your local database connection information.
-
-**Never upload your personal `.env` file to GitHub.**
-
-### Step 1: Find `.env.example`
-
-After cloning the repository, look for:
-
-```text
-.env.example
-```
-
-This file contains the required environment variable names and example values.
-
-### Step 2: Create your own `.env`
-
-In the project's root folder, create a file named:
-
-```text
-.env
-```
-
-Copy the contents of `.env.example` into your new `.env` file.
-
-You can do this manually or through your terminal.
-
-Windows Command Prompt:
-
-```cmd
-copy .env.example .env
-```
-
-PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Git Bash:
-
-```bash
-cp .env.example .env
-```
-
-### Step 3: Configure your local database credentials
-
-Example `.env.example`:
+Example environment configuration:
 
 ```env
 APP_ENV=development
@@ -179,156 +129,68 @@ DB_USER=postgres
 DB_PASSWORD=your_local_password
 ```
 
-Your own `.env` should contain your actual local PostgreSQL credentials.
+Change the values according to your own PostgreSQL installation.
 
-For example:
+**Important:**
+- Each member should use their own local database credentials.
+- Never upload your `.env` file to GitHub.
+- Keep `.env.example` updated whenever the required environment variables change.
+- PHP does not automatically load `.env` files. The application must have a dotenv package or another environment-loading method configured.
 
-```env
-APP_ENV=development
+### Step 3: Create the Database
 
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_NAME=unisync_db
-DB_USER=postgres
-DB_PASSWORD=my_own_postgres_password
-```
+Open PostgreSQL through pgAdmin or your preferred database tool.
 
-The password above is only an example. Use the password you configured when installing PostgreSQL.
+Create a database named:
 
-### Important .env rules
-
-- Everyone creates their own `.env`.
-- Everyone can have different database passwords.
-- Do not commit `.env` to GitHub.
-- Do not send your actual database password in the group chat.
-- Do not change `.env.example` to include your personal credentials.
-
-The `.env.example` file is shared. The `.env` file is private to your computer.
-
----
-
-# 5. Set Up PostgreSQL
-
-UniSync uses PostgreSQL.
-
-Each developer needs a local database named:
-
-```text
+```sql
 unisync_db
 ```
 
-### Step 1: Open PostgreSQL
+Locate the database initialization SQL file in the repository and execute it against the newly created database.
 
-You can use pgAdmin or the PostgreSQL terminal (`psql`).
+If sample data is available, locate and execute the seed SQL file afterward.
 
-### Step 2: Create the database
+**Important:** Check the SQL scripts before running them. Initialization scripts may contain commands that drop and recreate existing tables, which can delete your current data.
 
-Run:
+### Step 4: Run the Application
 
-```sql
-CREATE DATABASE unisync_db;
-```
+Follow the current project configuration and identify its PHP entry point.
 
-### Step 3: Create the database tables
-
-Open the project's:
-
-```text
-db/init.sql
-```
-
-Execute the SQL script against `unisync_db`.
-
-This initializes the database structure.
-
-**Warning:** The initialization script may drop existing tables before recreating them. Do not execute it on a database containing data you need to keep.
-
-### Step 4: Insert sample data
-
-Open:
-
-```text
-db/seed.sql
-```
-
-Execute it against `unisync_db`.
-
-This inserts sample records so you can test the application without manually creating everything.
-
-### Step 5: Check the database
-
-Verify that the tables were created successfully.
-
-The approved database design includes:
-
-- STUDENT
-- ORGANIZATION
-- MEMBERSHIP
-- EVENT
-- VENUE
-- EVENT_SCHEDULE
-- REGISTRATION
-
-The notification table is reserved for future functionality and is not part of the current notification implementation.
-
----
-
-# 6. Run the Application Locally
-
-Once PHP and PostgreSQL are installed and your `.env` is configured:
-
-1. Open the UniSync project folder.
-2. Check that your local database exists.
-3. Make sure `config/db.php` can read your `.env` configuration.
-4. Start the PHP development server using the project's configured document root.
-
-If the website pages are located inside `public/`, you can use:
+If the application is configured to use a `public` directory as its document root, you may run:
 
 ```bash
 php -S localhost:8000 -t public
 ```
 
-Then open:
+Otherwise, use the appropriate command for the current project structure.
+
+Open the local address in your browser:
 
 ```text
 http://localhost:8000
 ```
 
-If the project uses Apache/XAMPP instead, follow the group's configured Apache setup.
-
-If you encounter a database connection error, check:
-- Is PostgreSQL running?
-- Does `unisync_db` exist?
-- Are your `.env` credentials correct?
-- Is the database connection code reading the correct environment variables?
+If the application uses a different port or server configuration, follow the latest instructions from the team.
 
 ---
 
-# 7. Git Workflow
+## 6. Git Workflow
 
-This is important because all of us will be working on the same project.
+Since everyone is working on the same project, make sure your changes are pushed to the shared repository.
 
-**Always pull the latest changes before starting work.**
+### Before Starting Work
 
-### Step 1: Check your current branch
-
-```bash
-git branch
-```
-
-### Step 2: Get the latest changes
-
-If you are working on the shared main branch:
+Get the latest changes from the main branch:
 
 ```bash
+git switch main
 git pull origin main
 ```
 
-If you are working on your own branch, pull from that branch instead.
+### Create a Branch
 
-### Step 3: Create your own branch
-
-Recommended:
+Create a separate branch for your task:
 
 ```bash
 git switch -c feature/your-task
@@ -338,233 +200,170 @@ Examples:
 
 ```bash
 git switch -c feature/homepage
-```
-
-```bash
 git switch -c feature/event-details
+git switch -c feature/login
 ```
 
-```bash
-git switch -c feature/student-dashboard
-```
+Use a branch name that describes what you're working on.
 
-This keeps your work separate from everyone else's until it is ready to be merged.
+### Save Your Changes
 
-### Step 4: Work on your assigned files
-
-Make your changes inside the cloned UniSync project.
-
-For example:
-
-```text
-public/
-    index.php
-    login.php
-    register.php
-    events.php
-```
-
-If you are only creating the frontend, HTML, CSS, Tailwind CSS, and jQuery are acceptable.
-
-You do not need to implement the PHP backend if you are not comfortable with it.
-
-### Step 5: Check your changes
-
-Before uploading, run:
+Check which files you modified:
 
 ```bash
 git status
 ```
 
-This shows which files you changed.
-
-You can inspect your changes with:
-
-```bash
-git diff
-```
-
-### Step 6: Commit your changes
-
-Add the files you want to upload:
+Stage your changes:
 
 ```bash
 git add .
 ```
 
-Create a commit:
+Commit your work:
 
 ```bash
-git commit -m "Create homepage design"
+git commit -m "Add homepage layout"
 ```
 
-Use meaningful commit messages.
-
-Examples:
-
-```text
-Create homepage design
-Add event browsing page
-Implement event search interface
-Add student registration form
-Fix event details layout
-```
-
-### Step 7: Push your branch
+Push your branch:
 
 ```bash
 git push -u origin feature/your-task
 ```
 
-Your changes will now be available in the shared GitHub repository.
+### Submit Your Changes
 
-### Step 8: Merge your changes
+After pushing your branch:
 
-Once your work is ready, let the group know.
+1. Open the repository on GitHub.
+2. Create a Pull Request.
+3. Let the team review your changes.
+4. Merge the changes into the main branch once approved.
 
-We can review your changes and merge your branch into `main` through a GitHub Pull Request.
+### Important Git Reminders
 
----
-
-# 8. Important Git Rules
-
-Please follow these to avoid conflicts:
-
-1. Don't work on a completely separate project.
-2. Always clone the group's repository.
-3. Pull the latest changes before starting.
-4. Use your assigned branch when possible.
-5. Don't directly overwrite another person's files.
-6. Don't push unfinished or broken changes to `main`.
-7. Commit regularly instead of uploading everything at once.
-8. Tell the group when your task is ready for review.
-9. Never commit `.env` or other files containing secrets.
-
-### If Git says there is a conflict
-
-Don't immediately delete files or force-push.
-
-A conflict means Git cannot automatically combine two people's changes.
-
-Ask the group for help if you are unsure how to resolve it.
+- Avoid working directly on the `main` branch.
+- Pull the latest changes before starting a new task.
+- Commit regularly instead of waiting until everything is finished.
+- Use meaningful commit messages.
+- Do not upload `.env`, passwords, or other private credentials.
+- Avoid force-pushing or overwriting another member's work.
+- If you encounter a merge conflict, coordinate with the person responsible for the affected files.
 
 ---
 
-# 9. Frontend and Backend Collaboration
+## 7. Application Roles
 
-We are dividing the work so everyone can contribute even if they have different levels of PHP experience.
+UniSync uses a single student account system. A student who creates an organization automatically becomes its Admin.
 
-### Frontend
+Organization roles determine what a member can do.
 
-The frontend includes:
-- HTML
-- CSS
-- Tailwind CSS
-- jQuery
+| Role | Permissions |
+|---|---|
+| Admin | Manage the organization, manage members and their roles, and manage organization events. |
+| Manager | Create and manage events and view attendees and members. Cannot manage membership roles. |
+| Member | View organization information and events, and register for events. |
 
-You can focus on the layout, buttons, forms, cards, navigation, and page interactions.
-
-### Backend
-
-The backend includes:
-- PHP
-- PostgreSQL
-- Database queries
-- Form processing
-- Authentication
-- Event registration
-- Application permissions
-
-Backend processing should be organized in the `php/` folder.
-
-### When creating frontend pages
-
-Please coordinate with the group regarding:
-
-- Form field names.
-- Button actions.
-- Expected backend handler URLs.
-- Data that should be displayed.
-- Expected responses from the backend.
-
-For AJAX requests, we should use a consistent JSON response format:
-
-```json
-{
-    "success": true,
-    "message": "Operation completed successfully."
-}
-```
-
-This helps us connect the frontend to the backend without having to rewrite everything.
-
-If you are unsure how a feature should work, ask before implementing a different workflow.
+Students do not need to belong to an organization to register for its public events.
 
 ---
 
-# 10. Troubleshooting
+## 8. Event Registration and Management
 
-### Git is not recognized
+A few important rules guide how event registration works:
 
-Git may not be installed or added to PATH.
+- A student can register for an event only once.
+- Being an organization member does not automatically register a student for its events.
+- Public events can be joined by students outside the hosting organization.
+- Only authorized organization members can manage their organization's events.
+- An event's end time must be later than its start time.
+- The system prevents overlapping events from being scheduled at the same venue and date.
 
-Install Git and restart your terminal.
+### Attendees and Members
 
-### PHP is not recognized
+Event management separates these into two views:
 
-Make sure PHP is installed and its executable folder is added to PATH.
+**Attendees**
+- Displays all students registered for the selected event.
+- Includes students who are not members of the hosting organization.
+- Shows their names, email addresses, and registration dates.
 
-### PostgreSQL connection failed
-
-Check:
-- PostgreSQL service is running.
-- Database name is correct.
-- Username and password are correct.
-- Host and port are correct.
-- Your `.env` file exists.
-
-### My page does not load
-
-Check:
-- Are you running the correct PHP server?
-- Is the page inside the configured document root?
-- Are the file paths correct?
-- Are there PHP errors?
-
-### Git push was rejected
-
-Someone may have pushed changes before you.
-
-Try pulling the latest changes and resolving any conflicts before pushing again. If you are working on a feature branch, make sure you are pushing the correct branch.
+**Members**
+- Displays all members of the hosting organization.
+- Shows their names, email addresses, organization roles, and whether they registered for the selected event.
+- A member marked as "Not registered" simply has not registered for that event. It does not mean they were absent.
 
 ---
 
-# 11. Before You Start Working
+## 9. Development Guidelines
 
-Please make sure you have completed these:
+To keep the project organized:
 
-- [ ] Installed Git.
-- [ ] Installed PHP.
-- [ ] Installed PostgreSQL.
-- [ ] Cloned the UniSync repository.
-- [ ] Created your own `.env`.
-- [ ] Created your local `unisync_db` database.
-- [ ] Executed `db/init.sql`.
-- [ ] Executed `db/seed.sql`.
-- [ ] Confirmed that the application runs locally.
-- [ ] Created your assigned Git branch.
-- [ ] Confirmed your assigned pages with the group.
+- Check existing files before creating new ones.
+- Follow the naming conventions already used in the repository.
+- Keep related files organized.
+- Reuse existing components and functions when appropriate.
+- Avoid creating duplicate pages or database connections.
+- Coordinate with the team before moving, renaming, or deleting shared files.
+- Test your changes before pushing them.
+- Make sure your changes do not break existing features.
+
+If you're working on a frontend page, focus on making the layout and interactions work with the existing design. Coordinate with whoever is handling the backend before changing how data is retrieved or submitted.
 
 ---
 
-# Final Reminder
+## 10. Troubleshooting
 
-The goal is to make everyone's work part of one UniSync project.
+### Database Connection Failed
 
-You can use ChatGPT to help with your assigned pages, but make sure the generated code follows the existing project structure and agreed system requirements.
+Check the following:
+- Is PostgreSQL running?
+- Does the `unisync_db` database exist?
+- Are your `.env` credentials correct?
+- Is the PostgreSQL PDO extension enabled in PHP?
+- Does the application's database connection configuration load the environment variables correctly?
 
-If you are working on frontend design only, that's completely fine. I'll handle converting the pages to PHP and connecting them to the backend.
+### Page Not Found
 
-**Clone the repository, create your own `.env`, work on your assigned branch, and push your changes when they're ready.**
+- Check the current PHP entry point.
+- Confirm that you're running the application from the correct location.
+- Check whether the local server uses a specific document root.
+- Review the current project routing configuration.
 
-Let's keep everything in one repository so we can integrate the system properly.
+### Changes Are Missing
+
+Make sure you:
+- Saved your files.
+- Committed your changes.
+- Pushed your branch.
+- Are viewing the correct branch on GitHub.
+
+### Git Merge Conflict
+
+- Check which files have conflicts.
+- Coordinate with the teammate who modified the same files.
+- Resolve the conflicts carefully.
+- Test the affected functionality before committing the resolution.
+
+---
+
+## 11. Project Scope
+
+The current development focuses on the core UniSync features: student accounts, event browsing, registration, organization management, event scheduling, and dashboards.
+
+Some features are intentionally outside the current implementation scope, including:
+
+- QR-based attendance tracking.
+- Actual attendance monitoring.
+- Mobile application.
+- Automated notification functionality.
+- A separate organization directory page.
+
+These may be considered for future improvements, but they should not be treated as required features of the current version.
+
+---
+
+## 12. Project Goal
+
+UniSync aims to make university event discovery and organization scheduling more organized and accessible. By bringing event browsing, registration, and organization management together, the platform provides students and organizations with a shared space to manage campus activities.
