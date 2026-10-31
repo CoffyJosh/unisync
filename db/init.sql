@@ -55,14 +55,16 @@ CREATE TABLE MEMBERSHIP (
 
 -- 4. EVENT
 CREATE TABLE EVENT (
-    event_id        SERIAL PRIMARY KEY,
-    organization_id INTEGER NOT NULL,
-    event_name      VARCHAR(200) NOT NULL,
-    description     TEXT,
-    status          VARCHAR(20) NOT NULL DEFAULT 'pending',
+    event_id SERIAL PRIMARY KEY,
+    organization_id INT NOT NULL,
+    event_name VARCHAR(200) NOT NULL,
+    description TEXT,
+    event_image TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
 
     CONSTRAINT fk_event_organization
-        FOREIGN KEY (organization_id) REFERENCES ORGANIZATION(organization_id)
+        FOREIGN KEY (organization_id)
+        REFERENCES ORGANIZATION(organization_id)
         ON DELETE CASCADE,
 
     CONSTRAINT chk_event_status
@@ -71,13 +73,29 @@ CREATE TABLE EVENT (
 
 -- 5. VENUE
 CREATE TABLE VENUE (
-    venue_id    SERIAL PRIMARY KEY,
-    venue_name  VARCHAR(150) NOT NULL UNIQUE,
-    location    VARCHAR(255),
-    capacity    INTEGER,
+    venue_id SERIAL PRIMARY KEY,
+    venue_name VARCHAR(150) NOT NULL UNIQUE,
+    location TEXT NOT NULL,
+    capacity INT,
+
+    latitude DECIMAL(10, 7),
+    longitude DECIMAL(10, 7),
 
     CONSTRAINT chk_venue_capacity
-        CHECK (capacity IS NULL OR capacity > 0)
+        CHECK (capacity IS NULL OR capacity > 0),
+
+    CONSTRAINT chk_venue_latitude
+        CHECK (latitude IS NULL OR latitude BETWEEN -90 AND 90),
+
+    CONSTRAINT chk_venue_longitude
+        CHECK (longitude IS NULL OR longitude BETWEEN -180 AND 180),
+
+    CONSTRAINT chk_venue_coordinates
+        CHECK (
+            (latitude IS NULL AND longitude IS NULL)
+            OR
+            (latitude IS NOT NULL AND longitude IS NOT NULL)
+        )
 );
 
 -- 6. EVENT_SCHEDULE

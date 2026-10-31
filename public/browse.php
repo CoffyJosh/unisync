@@ -233,7 +233,7 @@ ob_start();
                     </div>
 
                     <a
-                        href="event_details.php?id=<?= (int)$event['event_id'] ?>"
+                        href="event.php?id=<?php echo (int)$event['event_id']; ?>"
                         class="block text-center w-full bg-[#1E3A5F] hover:bg-[#152c49] text-white text-sm font-semibold py-3 rounded-lg transition-colors"
                     >
                         View Event Details

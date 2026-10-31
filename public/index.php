@@ -192,7 +192,7 @@ function formatEventTime($start, $end) {
 
                                     <div class="border-t border-slate-100 mt-auto pt-4">
 
-                                        <a href="event_details.php?id=<?= (int) $event['event_id'] ?>"
+                                        <a href="event.php?id=<?= (int) $event['event_id'] ?>"
                                            class="text-blue-900 hover:text-blue-700 font-semibold text-sm">
                                             View Event Details &rarr;
                                         </a>
