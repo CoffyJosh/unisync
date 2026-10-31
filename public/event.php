@@ -319,28 +319,17 @@ $eventImage = $event['event_image'] ?? '';
         <!-- Event Banner -->
         <div class="w-full h-64 md:h-96 rounded-2xl overflow-hidden bg-slate-200 mb-8">
 
-            <?php if (!empty($eventImage)): ?>
+            <?php $displayImage = !empty($eventImage)
+                ? $eventImage
+                : '../assets/images/default-event.jpg';
+            ?>
 
-                <img
-                    src="<?php echo htmlspecialchars($eventImage); ?>"
-                    alt="<?php echo htmlspecialchars($event['event_name']); ?>"
-                    class="w-full h-full object-cover"
-                    onerror="this.style.display='none';"
-                >
-
-            <?php else: ?>
-
-                <div class="w-full h-full flex flex-col items-center justify-center text-slate-400">
-
-                    <i class="fa-solid fa-calendar-days text-6xl mb-4"></i>
-
-                    <p class="font-medium">
-                        No event image available
-                    </p>
-
-                </div>
-
-            <?php endif; ?>
+            <img
+                src="<?php echo htmlspecialchars($displayImage); ?>"
+                alt="<?php echo htmlspecialchars($event['event_name']); ?>"
+                class="w-full h-full object-cover"
+                onerror="this.onerror=null; this.src='../assets/images/default-event.jpg';"
+            >
 
         </div>
 
@@ -531,7 +520,7 @@ $eventImage = $event['event_image'] ?? '';
             </div>
 
             <!-- Registration and Countdown Sidebar -->
-            <aside class="space-y-6">
+            <aside class="space-y-6 lg:sticky lg:top-24 lg:self-start">
 
                 <!-- Countdown -->
                 <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
