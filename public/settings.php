@@ -88,22 +88,22 @@ require_once __DIR__ . "/../php/app/account/settings.php";
                     <form id="accountForm" class="space-y-5">
 
                         <div>
-                            <label for="student_name"
+                            <label for="account_name"
                                    class="block text-sm font-medium text-slate-700 mb-2">
-                                Student Name
+                                Account Name
                             </label>
 
                             <input
                                 type="text"
-                                id="student_name"
-                                name="student_name"
-                                value="<?php echo htmlspecialchars($student['student_name']); ?>"
+                                id="account_name"
+                                name="account_name"
+                                value="<?php echo htmlspecialchars($account['account_name']); ?>"
                                 maxlength="150"
                                 class="w-full px-4 py-3 rounded-lg border border-slate-300 outline-none focus:border-[#1E3A5F] focus:ring-2 focus:ring-blue-100"
                                 required>
 
                             <div class="field-error text-red-500 text-sm mt-1"
-                                 data-error="student_name"></div>
+                                 data-error="account_name"></div>
                         </div>
 
                         <div>
@@ -116,7 +116,7 @@ require_once __DIR__ . "/../php/app/account/settings.php";
                                 type="email"
                                 id="email"
                                 name="email"
-                                value="<?php echo htmlspecialchars($student['email']); ?>"
+                                value="<?php echo htmlspecialchars($account['email']); ?>"
                                 maxlength="255"
                                 class="w-full px-4 py-3 rounded-lg border border-slate-300 outline-none focus:border-[#1E3A5F] focus:ring-2 focus:ring-blue-100"
                                 required>

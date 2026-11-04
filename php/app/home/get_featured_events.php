@@ -23,6 +23,7 @@ $sql = "
     INNER JOIN venue v
         ON es.venue_id = v.venue_id
     WHERE e.status = 'confirmed'
+      AND o.status = 'active'
       AND es.event_date >= CURRENT_DATE
     ORDER BY es.event_date ASC, es.start_time ASC
     LIMIT 6

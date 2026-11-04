@@ -1,29 +1,35 @@
+
 <?php
 require_once __DIR__ . '/../../db.php';
 
-// Only logged-in students can access settings.
-if (!isset($_SESSION['student_id'])) {
-    header('Location: login.php');
+// Only logged-in accounts can access settings.
+if (!isset($_SESSION['account_id'])) {
+    header('Location: account_login.php');
     exit;
 }
 
-$studentId = $_SESSION['student_id'];
+$accountId = $_SESSION['account_id'];
 
-// Get the student's latest account information.
+// Get the account's latest information.
 $query = $pdo->prepare(
-    'SELECT student_name, email
-     FROM student
-     WHERE student_id = :student_id'
+    'SELECT account_name, email
+     FROM account
+     WHERE account_id = :account_id
+       AND account_status = :account_status'
 );
 
-$query->execute([':student_id' => $studentId]);
-$student = $query->fetch(PDO::FETCH_ASSOC);
+$query->execute([
+    ':account_id' => $accountId,
+    ':account_status' => 'active'
+]);
 
-if (!$student) {
+$account = $query->fetch(PDO::FETCH_ASSOC);
+
+if (!$account) {
     $_SESSION = [];
     session_destroy();
 
-    header('Location: login.php');
+    header('Location: account_login.php');
     exit;
 }
 
@@ -38,15 +44,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         // UPDATE ACCOUNT INFORMATION
         if ($action === 'update_account') {
 
-            $studentName = trim($_POST['student_name'] ?? '');
+            $accountName = trim($_POST['account_name'] ?? '');
             $email = trim($_POST['email'] ?? '');
 
             $errors = [];
 
-            if ($studentName === '') {
-                $errors['student_name'][] = 'Student name is required.';
-            } elseif (strlen($studentName) > 150) {
-                $errors['student_name'][] = 'Student name must not exceed 150 characters.';
+            if ($accountName === '') {
+                $errors['account_name'][] = 'Account name is required.';
+            } elseif (strlen($accountName) > 150) {
+                $errors['account_name'][] = 'Account name must not exceed 150 characters.';
             }
 
             if ($email === '') {
@@ -57,18 +63,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 $errors['email'][] = 'Email address must not exceed 255 characters.';
             }
 
-            // Check whether another student already uses this email.
+            // Check whether another account already uses this email.
             if (empty($errors)) {
                 $checkEmail = $pdo->prepare(
-                    'SELECT student_id
-                     FROM student
+                    'SELECT account_id
+                     FROM account
                      WHERE email = :email
-                     AND student_id != :student_id'
+                       AND account_id != :account_id'
                 );
 
                 $checkEmail->execute([
                     ':email' => $email,
-                    ':student_id' => $studentId
+                    ':account_id' => $accountId
                 ]);
 
                 if ($checkEmail->fetch()) {
@@ -85,20 +91,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             }
 
             $update = $pdo->prepare(
-                'UPDATE student
-                 SET student_name = :student_name,
+                'UPDATE account
+                 SET account_name = :account_name,
                      email = :email
-                 WHERE student_id = :student_id'
+                 WHERE account_id = :account_id'
             );
 
             $update->execute([
-                ':student_name' => $studentName,
+                ':account_name' => $accountName,
                 ':email' => $email,
-                ':student_id' => $studentId
+                ':account_id' => $accountId
             ]);
 
             // Update the session with the new account information.
-            $_SESSION['student_name'] = $studentName;
+            $_SESSION['account_name'] = $accountName;
             $_SESSION['email'] = $email;
 
             echo json_encode([
@@ -150,17 +156,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             // Get the current password hash.
             $passwordQuery = $pdo->prepare(
                 'SELECT password_hash
-                 FROM student
-                 WHERE student_id = :student_id'
+                 FROM account
+                 WHERE account_id = :account_id
+                   AND account_status = :account_status'
             );
 
             $passwordQuery->execute([
-                ':student_id' => $studentId
+                ':account_id' => $accountId,
+                ':account_status' => 'active'
             ]);
 
-            $account = $passwordQuery->fetch(PDO::FETCH_ASSOC);
+            $accountPassword = $passwordQuery->fetch(PDO::FETCH_ASSOC);
 
-            if (!$account || !password_verify($currentPassword, $account['password_hash'])) {
+            if (
+                !$accountPassword ||
+                !password_verify($currentPassword, $accountPassword['password_hash'])
+            ) {
                 $errors['current_password'][] = 'Your current password is incorrect.';
             }
 
@@ -176,14 +187,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
 
             $updatePassword = $pdo->prepare(
-                'UPDATE student
+                'UPDATE account
                  SET password_hash = :password_hash
-                 WHERE student_id = :student_id'
+                 WHERE account_id = :account_id'
             );
 
             $updatePassword->execute([
                 ':password_hash' => $newPasswordHash,
-                ':student_id' => $studentId
+                ':account_id' => $accountId
             ]);
 
             echo json_encode([

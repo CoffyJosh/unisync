@@ -1,9 +1,16 @@
 <?php
 require_once __DIR__ . '/../../db.php';
 
-// Redirect logged-in students to the dashboard.
-if (isset($_SESSION['student_id'])) {
-    header('Location: index.php');
+// Determine which portal the registration came from.
+$isProviderRegistration = ($_GET['redirect'] ?? '') === 'provider';
+
+$redirectPage = $isProviderRegistration
+    ? 'provider_dashboard.php'
+    : 'index.php';
+
+// Redirect already logged-in accounts to the appropriate dashboard.
+if (isset($_SESSION['account_id'])) {
+    header('Location: ' . $redirectPage);
     exit;
 }
 
@@ -11,7 +18,7 @@ if (isset($_SESSION['student_id'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
     header('Content-Type: application/json');
 
-    $student_name = trim($_POST['student_name'] ?? '');
+    $account_name = trim($_POST['account_name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
@@ -19,10 +26,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
     $errors = [];
 
     // Name validation.
-    if ($student_name === '') {
-        $errors['student_name'][] = 'Full name is required.';
-    } elseif (mb_strlen($student_name) > 150) {
-        $errors['student_name'][] = 'Full name cannot exceed 150 characters.';
+    if ($account_name === '') {
+        $errors['account_name'][] = 'Full name is required.';
+    } elseif (mb_strlen($account_name) > 150) {
+        $errors['account_name'][] = 'Full name cannot exceed 150 characters.';
     }
 
     // Email validation.
@@ -70,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
     try {
         // Check whether the email is already registered.
         $checkEmail = $pdo->prepare(
-            'SELECT student_id FROM student WHERE email = :email LIMIT 1'
+            'SELECT account_id FROM account WHERE email = :email LIMIT 1'
         );
 
         $checkEmail->execute([':email' => $email]);
@@ -88,31 +95,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         // Hash the password before storing it.
         $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-        // Insert the new student.
-        $insertStudent = $pdo->prepare(
-            'INSERT INTO student (student_name, email, password_hash)
-             VALUES (:student_name, :email, :password_hash)
-             RETURNING student_id'
+        // Insert the new account.
+        $insertAccount = $pdo->prepare(
+            'INSERT INTO account (account_name, email, password_hash)
+             VALUES (:account_name, :email, :password_hash)
+             RETURNING account_id'
         );
 
-        $insertStudent->execute([
-            ':student_name' => $student_name,
+        $insertAccount->execute([
+            ':account_name' => $account_name,
             ':email' => $email,
             ':password_hash' => $password_hash
         ]);
 
-        $student_id = $insertStudent->fetchColumn();
+        $account_id = $insertAccount->fetchColumn();
 
-        // Automatically log in the newly registered student.
+        // Automatically log in the newly registered account.
         session_regenerate_id(true);
 
-        $_SESSION['student_id'] = $student_id;
-        $_SESSION['student_name'] = $student_name;
+        $_SESSION['account_id'] = $account_id;
+        $_SESSION['account_name'] = $account_name;
         $_SESSION['email'] = $email;
 
         echo json_encode([
             'success' => true,
-            'message' => 'Your account has been created successfully!'
+            'message' => 'Your account has been created successfully!',
+            'redirect' => $redirectPage
         ]);
         exit;
 

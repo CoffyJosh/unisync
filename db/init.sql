@@ -1,3 +1,4 @@
+
 -- UniSync database initialization
 -- PostgreSQL
 -- WARNING: This script DROPS the existing UniSync tables and their data.
@@ -5,7 +6,7 @@
 
 BEGIN;
 
--- Drop tables in dependency order so the database can be refreshed safely.
+-- Drop tables in dependency order.
 DROP TABLE IF EXISTS NOTIFICATION CASCADE;
 DROP TABLE IF EXISTS REGISTRATION CASCADE;
 DROP TABLE IF EXISTS EVENT_SCHEDULE CASCADE;
@@ -13,55 +14,74 @@ DROP TABLE IF EXISTS EVENT CASCADE;
 DROP TABLE IF EXISTS MEMBERSHIP CASCADE;
 DROP TABLE IF EXISTS VENUE CASCADE;
 DROP TABLE IF EXISTS ORGANIZATION CASCADE;
-DROP TABLE IF EXISTS STUDENT CASCADE;
+DROP TABLE IF EXISTS ACCOUNT CASCADE;
 
--- 1. STUDENT
-CREATE TABLE STUDENT (
-    student_id      SERIAL PRIMARY KEY,
-    student_name    VARCHAR(150) NOT NULL,
+
+-- 1. ACCOUNT
+CREATE TABLE ACCOUNT (
+    account_id      SERIAL PRIMARY KEY,
+    account_name    VARCHAR(150) NOT NULL,
     email           VARCHAR(255) NOT NULL UNIQUE,
-    password_hash   TEXT NOT NULL
+    password_hash   TEXT NOT NULL,
+    avatar_url      TEXT,
+    account_status  VARCHAR(30) NOT NULL DEFAULT 'active',
+
+    CONSTRAINT chk_account_status
+        CHECK (account_status IN ('active', 'disabled', 'deleted'))
 );
+
 
 -- 2. ORGANIZATION
 CREATE TABLE ORGANIZATION (
     organization_id     SERIAL PRIMARY KEY,
-    organization_name   VARCHAR(150) NOT NULL UNIQUE,
+    organization_name   VARCHAR(150) NOT NULL,
+    university_name     VARCHAR(150) NOT NULL,
     description         TEXT,
-    status              VARCHAR(30) NOT NULL DEFAULT 'active'
+    avatar_url          TEXT,
+    banner_url          TEXT,
+    status              VARCHAR(30) NOT NULL DEFAULT 'active',
+
+    CONSTRAINT chk_organization_status
+        CHECK (status IN ('active', 'inactive', 'deleted'))
 );
+
 
 -- 3. MEMBERSHIP
 CREATE TABLE MEMBERSHIP (
     membership_id    SERIAL PRIMARY KEY,
-    student_id       INTEGER NOT NULL,
+    account_id       INTEGER NOT NULL,
     organization_id  INTEGER NOT NULL,
     role             VARCHAR(20) NOT NULL DEFAULT 'Member',
     membership_date  DATE NOT NULL DEFAULT CURRENT_DATE,
+    status           VARCHAR(30) NOT NULL DEFAULT 'active',
 
-    CONSTRAINT fk_membership_student
-        FOREIGN KEY (student_id) REFERENCES STUDENT(student_id)
+    CONSTRAINT fk_membership_account
+        FOREIGN KEY (account_id) REFERENCES ACCOUNT(account_id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_membership_organization
         FOREIGN KEY (organization_id) REFERENCES ORGANIZATION(organization_id)
         ON DELETE CASCADE,
 
-    CONSTRAINT uq_student_organization
-        UNIQUE (student_id, organization_id),
+    CONSTRAINT uq_account_organization
+        UNIQUE (account_id, organization_id),
 
     CONSTRAINT chk_membership_role
-        CHECK (role IN ('Admin', 'Manager', 'Member'))
+        CHECK (role IN ('Admin', 'Manager', 'Member')),
+
+    CONSTRAINT chk_membership_status
+        CHECK (status IN ('active', 'inactive', 'deleted'))
 );
+
 
 -- 4. EVENT
 CREATE TABLE EVENT (
-    event_id SERIAL PRIMARY KEY,
-    organization_id INT NOT NULL,
-    event_name VARCHAR(200) NOT NULL,
-    description TEXT,
-    event_image TEXT,
-    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    event_id        SERIAL PRIMARY KEY,
+    organization_id INTEGER NOT NULL,
+    event_name      VARCHAR(200) NOT NULL,
+    description     TEXT,
+    event_image     TEXT,
+    status          VARCHAR(20) NOT NULL DEFAULT 'pending',
 
     CONSTRAINT fk_event_organization
         FOREIGN KEY (organization_id)
@@ -69,18 +89,27 @@ CREATE TABLE EVENT (
         ON DELETE CASCADE,
 
     CONSTRAINT chk_event_status
-        CHECK (status IN ('pending', 'confirmed', 'cancelled', 'completed'))
+        CHECK (status IN ('pending', 'confirmed', 'cancelled', 'completed', 'deleted'))
 );
+
 
 -- 5. VENUE
 CREATE TABLE VENUE (
-    venue_id SERIAL PRIMARY KEY,
-    venue_name VARCHAR(150) NOT NULL UNIQUE,
-    location TEXT NOT NULL,
-    capacity INT,
+    venue_id    SERIAL PRIMARY KEY,
+    account_id  INTEGER NOT NULL,
+    venue_name  VARCHAR(150) NOT NULL,
+    location    TEXT NOT NULL,
+    capacity    INT,
+    latitude    DECIMAL(10, 7),
+    longitude   DECIMAL(10, 7),
+    status      VARCHAR(30) NOT NULL DEFAULT 'active',
 
-    latitude DECIMAL(10, 7),
-    longitude DECIMAL(10, 7),
+    CONSTRAINT fk_venue_account
+        FOREIGN KEY (account_id) REFERENCES ACCOUNT(account_id)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT uq_provider_venue_name
+        UNIQUE (account_id, venue_name),
 
     CONSTRAINT chk_venue_capacity
         CHECK (capacity IS NULL OR capacity > 0),
@@ -96,62 +125,77 @@ CREATE TABLE VENUE (
             (latitude IS NULL AND longitude IS NULL)
             OR
             (latitude IS NOT NULL AND longitude IS NOT NULL)
-        )
+        ),
+
+    CONSTRAINT chk_venue_status
+        CHECK (status IN ('active', 'inactive', 'deleted'))
 );
 
+
 -- 6. EVENT_SCHEDULE
+-- Also serves as the venue application/request record.
 CREATE TABLE EVENT_SCHEDULE (
-    schedule_id SERIAL PRIMARY KEY,
-    event_id    INTEGER NOT NULL,
-    venue_id    INTEGER NOT NULL,
-    event_date  DATE NOT NULL,
-    start_time  TIME NOT NULL,
-    end_time    TIME NOT NULL,
+    schedule_id  SERIAL PRIMARY KEY,
+    event_id     INTEGER NOT NULL,
+    venue_id     INTEGER NOT NULL,
+    event_date   DATE NOT NULL,
+    start_time   TIME NOT NULL,
+    end_time     TIME NOT NULL,
+    status       VARCHAR(30) NOT NULL DEFAULT 'pending',
 
     CONSTRAINT fk_schedule_event
         FOREIGN KEY (event_id) REFERENCES EVENT(event_id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_schedule_venue
-        FOREIGN KEY (venue_id) REFERENCES VENUE(venue_id),
+        FOREIGN KEY (venue_id) REFERENCES VENUE(venue_id)
+        ON DELETE RESTRICT,
 
     CONSTRAINT chk_schedule_time
-        CHECK (end_time > start_time)
+        CHECK (end_time > start_time),
+
+    CONSTRAINT chk_schedule_status
+        CHECK (status IN ('pending', 'confirmed', 'rejected', 'cancelled', 'completed'))
 );
+
 
 -- 7. REGISTRATION
 CREATE TABLE REGISTRATION (
-    registration_id   SERIAL PRIMARY KEY,
-    student_id        INTEGER NOT NULL,
-    event_id          INTEGER NOT NULL,
-    registration_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    registration_id    SERIAL PRIMARY KEY,
+    account_id         INTEGER NOT NULL,
+    event_id           INTEGER NOT NULL,
+    registration_date  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status             VARCHAR(30) NOT NULL DEFAULT 'active',
 
-    CONSTRAINT fk_registration_student
-        FOREIGN KEY (student_id) REFERENCES STUDENT(student_id)
+    CONSTRAINT fk_registration_account
+        FOREIGN KEY (account_id) REFERENCES ACCOUNT(account_id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_registration_event
         FOREIGN KEY (event_id) REFERENCES EVENT(event_id)
         ON DELETE CASCADE,
 
-    CONSTRAINT uq_student_event
-        UNIQUE (student_id, event_id)
+    CONSTRAINT uq_account_event
+        UNIQUE (account_id, event_id),
+
+    CONSTRAINT chk_registration_status
+        CHECK (status IN ('active', 'cancelled', 'deleted'))
 );
 
+
 -- 8. NOTIFICATION
--- Prepared for future implementation. Notifications are not required
--- for the initial event-registration workflow.
 CREATE TABLE NOTIFICATION (
     notification_id      SERIAL PRIMARY KEY,
-    student_id           INTEGER NOT NULL,
+    account_id           INTEGER NOT NULL,
     organization_id      INTEGER NOT NULL,
-    event_id              INTEGER,
+    event_id             INTEGER,
     notification_message TEXT NOT NULL,
-    is_read               BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_read              BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status               VARCHAR(30) NOT NULL DEFAULT 'active',
 
-    CONSTRAINT fk_notification_student
-        FOREIGN KEY (student_id) REFERENCES STUDENT(student_id)
+    CONSTRAINT fk_notification_account
+        FOREIGN KEY (account_id) REFERENCES ACCOUNT(account_id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_notification_organization
@@ -160,23 +204,40 @@ CREATE TABLE NOTIFICATION (
 
     CONSTRAINT fk_notification_event
         FOREIGN KEY (event_id) REFERENCES EVENT(event_id)
-        ON DELETE SET NULL
+        ON DELETE SET NULL,
+
+    CONSTRAINT chk_notification_status
+        CHECK (status IN ('active', 'deleted'))
 );
+
 
 -- Helpful indexes for common lookups.
 CREATE INDEX idx_membership_organization
     ON MEMBERSHIP(organization_id);
 
+CREATE INDEX idx_membership_account
+    ON MEMBERSHIP(account_id);
+
 CREATE INDEX idx_event_organization
     ON EVENT(organization_id);
+
+CREATE INDEX idx_venue_account
+    ON VENUE(account_id);
 
 CREATE INDEX idx_schedule_date_venue
     ON EVENT_SCHEDULE(event_date, venue_id);
 
+CREATE INDEX idx_schedule_status
+    ON EVENT_SCHEDULE(status);
+
 CREATE INDEX idx_registration_event
     ON REGISTRATION(event_id);
 
-CREATE INDEX idx_notification_student_created
-    ON NOTIFICATION(student_id, created_at DESC);
+CREATE INDEX idx_registration_account
+    ON REGISTRATION(account_id);
+
+CREATE INDEX idx_notification_account_created
+    ON NOTIFICATION(account_id, created_at DESC);
+
 
 COMMIT;

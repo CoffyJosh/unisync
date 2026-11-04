@@ -4,17 +4,17 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$isLoggedIn = isset($_SESSION['student_id']);
+$isLoggedIn = isset($_SESSION['account_id']);
 
 $currentPage = basename($_SERVER['PHP_SELF']);
 
 $showSearch = !in_array($currentPage, [
-    'login.php',
-    'registration.php'
+    'account_login.php',
+    'account_registration.php'
 ]);
 
-$authButtonText = ($currentPage === 'login.php') ? 'Register' : 'Login';
-$authButtonLink = ($currentPage === 'login.php') ? 'registration.php' : 'login.php';
+$authButtonText = ($currentPage === 'account_login.php') ? 'Register' : 'Login';
+$authButtonLink = ($currentPage === 'account_login.php') ? 'account_registration.php' : 'account_login.php';
 ?>
 
 <nav class="sticky top-0 z-50 w-full bg-white border-b border-slate-200 shadow-sm">
@@ -25,10 +25,23 @@ $authButtonLink = ($currentPage === 'login.php') ? 'registration.php' : 'login.p
 
             <!-- UniSync Branding -->
             <a href="index.php"
-               class="flex items-center gap-2.5 shrink-0 group">
+            class="flex items-center gap-2.5 shrink-0 group">
 
                 <div class="w-10 h-10 rounded-xl bg-[#1E3A5F] flex items-center justify-center group-hover:bg-[#294D78] transition-colors">
-                    <i class="fa-solid fa-calendar-days text-white text-lg"></i>
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="w-6 h-6 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2">
+
+                        <path stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4M9 9v.01M9 12v.01M9 15v.01M9 18v.01" />
+
+                    </svg>
+
                 </div>
 
                 <span class="text-2xl font-bold tracking-tight text-[#1E3A5F]">

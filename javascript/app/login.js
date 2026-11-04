@@ -71,7 +71,7 @@ $(document).ready(function () {
         $button.prop('disabled', true);
 
         $.ajax({
-            url: 'login.php',
+            url: window.location.pathname,
             type: 'POST',
             data: $form.serialize() + '&ajax=1',
             dataType: 'json',

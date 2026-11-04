@@ -1,3 +1,4 @@
+
 <?php
 require_once __DIR__ . '/../../db.php';
 
@@ -16,9 +17,11 @@ $sort = $_GET['sort'] ?? 'nearest';
 if (!in_array($view, ['events', 'organizations'], true)) {
     $view = 'events';
 }
+
 if (!in_array($status, ['all', 'upcoming', 'completed'], true)) {
     $status = 'all';
 }
+
 if (!in_array($sort, ['nearest', 'newest', 'oldest'], true)) {
     $sort = 'nearest';
 }
@@ -33,9 +36,11 @@ switch ($sort) {
     case 'newest':
         $orderSQL = 'es.event_date DESC, es.start_time DESC';
         break;
+
     case 'oldest':
         $orderSQL = 'es.event_date ASC, es.start_time ASC';
         break;
+
     default:
         $orderSQL = "
             CASE WHEN es.event_date >= CURRENT_DATE THEN 0 ELSE 1 END,
@@ -44,15 +49,6 @@ switch ($sort) {
             es.start_time ASC
         ";
         break;
-}
-
-// Status filter conditions (events)
-$statusConditions = [];
-if ($status === 'upcoming') {
-    $statusConditions[] = "e.status IN ('pending', 'confirmed')";
-    $statusConditions[] = "es.event_date >= CURRENT_DATE";
-} elseif ($status === 'completed') {
-    $statusConditions[] = "e.status = 'completed'";
 }
 
 // Formatting helpers
@@ -117,14 +113,20 @@ function renderPagination($page, $totalPages)
     <?php
 }
 
-// Organization filter (events view only). Exact ID match, never partial text.
+// Organization filter (events view only).
 $organizationName = '';
+
 if ($view === 'events' && $organizationId > 0) {
-    $orgStmt = $pdo->prepare(
-        'SELECT organization_name FROM organization WHERE organization_id = :id'
-    );
+    $orgStmt = $pdo->prepare("
+        SELECT organization_name
+        FROM organization
+        WHERE organization_id = :id
+          AND status = 'active'
+    ");
+
     $orgStmt->bindValue(':id', $organizationId, PDO::PARAM_INT);
     $orgStmt->execute();
+
     $organizationName = (string) $orgStmt->fetchColumn();
 
     if ($organizationName === '') {
@@ -141,10 +143,16 @@ if ($view === 'events') {
 
     $perPage = 9;
 
-    $where = ["e.status != 'cancelled'"];
     $params = [];
     $orderParams = [];
     $priorityOrder = '';
+
+    $where = [
+        "e.status NOT IN ('cancelled', 'deleted')",
+        "o.status = 'active'",
+        "es.status IN ('confirmed', 'completed')",
+        "v.status = 'active'"
+    ];
 
     if ($search !== '') {
         $where[] = "(
@@ -152,6 +160,7 @@ if ($view === 'events') {
             OR e.description ILIKE :s2
             OR o.organization_name ILIKE :s3
         )";
+
         $params[':s1'] = $searchLike;
         $params[':s2'] = $searchLike;
         $params[':s3'] = $searchLike;
@@ -164,6 +173,7 @@ if ($view === 'events') {
                 ELSE 2
             END,
         ";
+
         $orderParams[':s4'] = $searchLike;
         $orderParams[':s5'] = $searchLike;
     }
@@ -173,21 +183,56 @@ if ($view === 'events') {
         $params[':organization_id'] = $organizationId;
     }
 
-    $where = array_merge($where, $statusConditions);
+    // Upcoming: confirmed events with at least one upcoming confirmed schedule.
+    if ($status === 'upcoming') {
+        $where[] = "e.status = 'confirmed'";
+        $where[] = "
+            EXISTS (
+                SELECT 1
+                FROM event_schedule upcoming_es
+                WHERE upcoming_es.event_id = e.event_id
+                  AND upcoming_es.status = 'confirmed'
+                  AND upcoming_es.event_date >= CURRENT_DATE
+            )
+        ";
+    }
+
+    // Completed: completed events with at least one completed schedule.
+    if ($status === 'completed') {
+        $where[] = "e.status = 'completed'";
+        $where[] = "
+            EXISTS (
+                SELECT 1
+                FROM event_schedule completed_es
+                WHERE completed_es.event_id = e.event_id
+                  AND completed_es.status = 'completed'
+            )
+        ";
+    }
+
     $whereSQL = implode(' AND ', $where);
 
     $fromSQL = "
         FROM event e
-        INNER JOIN organization o ON e.organization_id = o.organization_id
-        INNER JOIN event_schedule es ON e.event_id = es.event_id
-        INNER JOIN venue v ON es.venue_id = v.venue_id
+        INNER JOIN organization o
+            ON e.organization_id = o.organization_id
+        INNER JOIN event_schedule es
+            ON e.event_id = es.event_id
+        INNER JOIN venue v
+            ON es.venue_id = v.venue_id
         WHERE $whereSQL
     ";
 
-    $countStmt = $pdo->prepare("SELECT COUNT(*) $fromSQL");
+    // Count distinct events to prevent duplicate cards from multiple schedules.
+    $countStmt = $pdo->prepare("
+        SELECT COUNT(DISTINCT e.event_id)
+        $fromSQL
+    ");
+
     foreach ($params as $key => $value) {
         $countStmt->bindValue($key, $value);
     }
+
     $countStmt->execute();
     $totalItems = (int) $countStmt->fetchColumn();
 
@@ -196,7 +241,7 @@ if ($view === 'events') {
     $offset = ($page - 1) * $perPage;
 
     $eventsStmt = $pdo->prepare("
-        SELECT
+        SELECT DISTINCT ON (e.event_id)
             e.event_id,
             e.event_name,
             e.description,
@@ -208,14 +253,20 @@ if ($view === 'events') {
             v.venue_name,
             v.location
         $fromSQL
-        ORDER BY $priorityOrder $orderSQL
+        ORDER BY
+            e.event_id,
+            $priorityOrder
+            $orderSQL
         LIMIT :limit OFFSET :offset
     ");
+
     foreach (array_merge($params, $orderParams) as $key => $value) {
         $eventsStmt->bindValue($key, $value);
     }
+
     $eventsStmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
     $eventsStmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+
     $eventsStmt->execute();
     $events = $eventsStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -233,10 +284,16 @@ if ($view === 'events') {
 
     $whereSQL = implode(' AND ', $where);
 
-    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM organization o WHERE $whereSQL");
+    $countStmt = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM organization o
+        WHERE $whereSQL
+    ");
+
     foreach ($params as $key => $value) {
         $countStmt->bindValue($key, $value);
     }
+
     $countStmt->execute();
     $totalItems = (int) $countStmt->fetchColumn();
 
@@ -253,43 +310,54 @@ if ($view === 'events') {
                 SELECT COUNT(*)
                 FROM event e
                 WHERE e.organization_id = o.organization_id
-                  AND e.status != 'cancelled'
+                  AND e.status NOT IN ('cancelled', 'deleted')
             ) AS event_count
         FROM organization o
         WHERE $whereSQL
         ORDER BY o.organization_name ASC
         LIMIT :limit OFFSET :offset
     ");
+
     foreach ($params as $key => $value) {
         $orgsStmt->bindValue($key, $value);
     }
+
     $orgsStmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
     $orgsStmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+
     $orgsStmt->execute();
     $organizations = $orgsStmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 // Count label
 if ($view === 'events') {
-    $countLabel = number_format($totalItems) . ($totalItems === 1 ? ' event found' : ' events found');
+    $countLabel = number_format($totalItems)
+        . ($totalItems === 1 ? ' event found' : ' events found');
 } else {
-    $countLabel = number_format($totalItems) . ($totalItems === 1 ? ' organization found' : ' organizations found');
+    $countLabel = number_format($totalItems)
+        . ($totalItems === 1 ? ' organization found' : ' organizations found');
 }
 
 // Organization filter chip
 ob_start();
+
 if ($view === 'events' && $organizationId > 0):
     ?>
     <div class="flex items-center gap-2 mb-5">
         <span class="inline-flex items-center gap-2 bg-blue-50 text-[#1E3A5F] text-sm font-medium px-3 py-1.5 rounded-full">
             Organization: <?= h($organizationName) ?>
-            <button type="button" id="clearOrgFilter"
+
+            <button type="button"
+                    id="clearOrgFilter"
                     class="text-lg leading-none hover:text-red-600"
-                    aria-label="Clear organization filter">&times;</button>
+                    aria-label="Clear organization filter">
+                &times;
+            </button>
         </span>
     </div>
     <?php
 endif;
+
 $chipHTML = ob_get_clean();
 
 // Render results
@@ -301,7 +369,9 @@ if ($view === 'events'):
         <?php if (empty($events)): ?>
             <div class="col-span-full bg-white border border-slate-200 rounded-xl p-10 text-center">
                 <h3 class="text-lg font-semibold text-slate-700">No events found</h3>
-                <p class="text-sm text-slate-500 mt-2">Try changing your search or filters.</p>
+                <p class="text-sm text-slate-500 mt-2">
+                    Try changing your search or filters.
+                </p>
             </div>
         <?php else: ?>
             <?php foreach ($events as $event): ?>
@@ -335,13 +405,16 @@ if ($view === 'events'):
 
                             <div class="flex items-center gap-2">
                                 <i class="fa-regular fa-clock text-[#D4A64A] w-4"></i>
-                                <?= formatEventTime($event['start_time']) ?> - <?= formatEventTime($event['end_time']) ?>
+                                <?= formatEventTime($event['start_time']) ?>
+                                -
+                                <?= formatEventTime($event['end_time']) ?>
                             </div>
 
                             <div class="flex items-center gap-2 min-w-0">
                                 <i class="fa-solid fa-location-dot text-[#D4A64A] w-4 shrink-0"></i>
                                 <span class="truncate">
-                                    <?= h($event['venue_name']) ?>, <?= h($event['location']) ?>
+                                    <?= h($event['venue_name']) ?>,
+                                    <?= h($event['location']) ?>
                                 </span>
                             </div>
                         </div>
@@ -362,14 +435,24 @@ else:
         <?php if (empty($organizations)): ?>
             <div class="col-span-full bg-white border border-slate-200 rounded-xl p-10 text-center">
                 <h3 class="text-lg font-semibold text-slate-700">No organizations found</h3>
-                <p class="text-sm text-slate-500 mt-2">Try a different search.</p>
+                <p class="text-sm text-slate-500 mt-2">
+                    Try a different search.
+                </p>
             </div>
         <?php else: ?>
             <?php foreach ($organizations as $org):
                 $orgId = (int) $org['organization_id'];
                 $eventCount = (int) $org['event_count'];
-                $orgSlug = strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', $org['organization_name']), '-'));
-                $orgPageUrl = 'organization.php?id=' . urlencode($orgId) . '&name=' . urlencode($orgSlug);
+
+                $orgSlug = strtolower(trim(
+                    preg_replace('/[^a-z0-9]+/i', '-', $org['organization_name']),
+                    '-'
+                ));
+
+                $orgPageUrl = 'organization.php?id='
+                    . urlencode($orgId)
+                    . '&name='
+                    . urlencode($orgSlug);
                 ?>
                 <div class="bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow flex flex-col">
                     <div class="h-2 bg-[#1E3A5F]"></div>
@@ -384,7 +467,8 @@ else:
                         </p>
 
                         <p class="text-xs text-slate-400 mb-5">
-                            <?= $eventCount ?> <?= $eventCount === 1 ? 'event' : 'events' ?>
+                            <?= $eventCount ?>
+                            <?= $eventCount === 1 ? 'event' : 'events' ?>
                         </p>
 
                         <a href="<?= h($orgPageUrl) ?>"
@@ -403,7 +487,7 @@ renderPagination($page, $totalPages);
 
 $resultsHTML = ob_get_clean();
 
-// AJAX requests return JSON; normal requests use the variables above.
+// AJAX requests return JSON.
 if (isset($_GET['ajax'])) {
     header('Content-Type: application/json; charset=UTF-8');
 

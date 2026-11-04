@@ -1,9 +1,11 @@
 
 <?php
+
 require_once __DIR__ . '/../../db.php';
 
-$studentId = $_SESSION['student_id'] ?? null;
+$accountId = $_SESSION['account_id'] ?? null;
 $eventId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+
 
 // Validate event ID.
 if (!$eventId || $eventId < 1) {
@@ -11,9 +13,10 @@ if (!$eventId || $eventId < 1) {
     exit;
 }
 
+
 // Retrieve event and organization information.
 $eventQuery = $pdo->prepare(
-    'SELECT
+    "SELECT
         e.event_id,
         e.event_name,
         e.description,
@@ -23,7 +26,9 @@ $eventQuery = $pdo->prepare(
      FROM event e
      INNER JOIN organization o
         ON e.organization_id = o.organization_id
-     WHERE e.event_id = :event_id'
+     WHERE e.event_id = :event_id
+       AND e.status <> 'deleted'
+       AND o.status = 'active'"
 );
 
 $eventQuery->execute([
@@ -37,13 +42,16 @@ if (!$event) {
     exit('Event not found.');
 }
 
-// Retrieve every schedule and its venue.
+
+// Retrieve confirmed and completed schedules with their venues.
 $scheduleQuery = $pdo->prepare(
-    'SELECT
+    "SELECT
         es.schedule_id,
         es.event_date,
         es.start_time,
         es.end_time,
+        es.status AS schedule_status,
+        v.venue_id,
         v.venue_name,
         v.location,
         v.latitude,
@@ -52,7 +60,9 @@ $scheduleQuery = $pdo->prepare(
      INNER JOIN venue v
         ON es.venue_id = v.venue_id
      WHERE es.event_id = :event_id
-     ORDER BY es.event_date ASC, es.start_time ASC'
+       AND es.status IN ('pending', 'confirmed', 'completed')
+       AND v.status = 'active'
+     ORDER BY es.event_date ASC, es.start_time ASC"
 );
 
 $scheduleQuery->execute([
@@ -60,14 +70,83 @@ $scheduleQuery->execute([
 ]);
 
 $schedules = $scheduleQuery->fetchAll(PDO::FETCH_ASSOC);
+$eventStatus = strtolower($event['status']);
 
-// Determine the event's current timing using Manila time.
+$hasConfirmedSchedule = false;
+$hasPendingSchedule = false;
+$hasFutureOrOngoingSchedule = false;
+
 $timezone = new DateTimeZone('Asia/Manila');
 $now = new DateTimeImmutable('now', $timezone);
 
-$nextSchedule = null;
+foreach ($schedules as $schedule) {
+
+    $status = strtolower($schedule['schedule_status']);
+
+    if ($status === 'pending') {
+        $hasPendingSchedule = true;
+    }
+
+    if ($status === 'confirmed') {
+        $hasConfirmedSchedule = true;
+
+        $start = new DateTimeImmutable(
+            $schedule['event_date'] . ' ' . $schedule['start_time'],
+            $timezone
+        );
+
+        $end = new DateTimeImmutable(
+            $schedule['event_date'] . ' ' . $schedule['end_time'],
+            $timezone
+        );
+
+        if ($now < $end) {
+            $hasFutureOrOngoingSchedule = true;
+        }
+    }
+}
+
+// Preserve manually cancelled events.
+if ($eventStatus !== 'cancelled' && $eventStatus !== 'deleted') {
+
+    if (!$hasConfirmedSchedule) {
+        $eventStatus = 'pending';
+
+    } elseif (!$hasFutureOrOngoingSchedule) {
+        $eventStatus = 'completed';
+
+    } else {
+        $eventStatus = 'confirmed';
+    }
+}
+
+$event['status'] = $eventStatus;
+
+// Count pending venue requests.
+$pendingQuery = $pdo->prepare(
+    "SELECT COUNT(*)
+     FROM event_schedule
+     WHERE event_id = :event_id
+       AND status = 'pending'"
+);
+
+$pendingQuery->execute([
+    ':event_id' => $eventId
+]);
+
+$pendingScheduleCount = (int) $pendingQuery->fetchColumn();
+
+
+// Determine event timing using Manila time.
+$timezone = new DateTimeZone('Asia/Manila');
+$now = new DateTimeImmutable('now', $timezone);
+
+$timingSchedules = [];
+$mapSchedules = [];
+
 $isOngoing = false;
 $hasFutureSchedule = false;
+
 
 foreach ($schedules as &$schedule) {
 
@@ -84,64 +163,98 @@ foreach ($schedules as &$schedule) {
     $schedule['start_datetime'] = $start->format('c');
     $schedule['end_datetime'] = $end->format('c');
 
-    if ($now >= $start && $now < $end) {
-        $isOngoing = true;
-    }
 
-    if ($now < $start) {
-        $hasFutureSchedule = true;
+    // Prepare schedule information for the reusable map.
+    $mapSchedules[] = [
+        'id' => (int) $schedule['schedule_id'],
+        'venue_name' => $schedule['venue_name'],
+        'location' => $schedule['location'],
+        'latitude' => $schedule['latitude'] !== null
+            ? (float) $schedule['latitude']
+            : null,
+        'longitude' => $schedule['longitude'] !== null
+            ? (float) $schedule['longitude']
+            : null,
+        'start' => $start->format('c'),
+        'end' => $end->format('c'),
+        'status' => $schedule['schedule_status']
+    ];
 
-        if (
-            $nextSchedule === null ||
-            $start < new DateTimeImmutable(
-                $nextSchedule['event_date'] . ' ' . $nextSchedule['start_time'],
-                $timezone
-            )
-        ) {
-            $nextSchedule = $schedule;
+
+    // Only confirmed schedules participate in the countdown
+    // and registration availability.
+    if ($schedule['schedule_status'] === 'confirmed') {
+
+        $timingSchedules[] = [
+            'start' => $start->format('c'),
+            'end' => $end->format('c')
+        ];
+
+        if ($now >= $start && $now < $end) {
+            $isOngoing = true;
+        }
+
+        if ($now < $start) {
+            $hasFutureSchedule = true;
         }
     }
 }
+
 unset($schedule);
+
 
 // Determine registration status.
 $isRegistered = false;
 
-if ($studentId) {
+if ($accountId) {
+
     $registrationQuery = $pdo->prepare(
-        'SELECT registration_id
+        "SELECT registration_id
          FROM registration
-         WHERE student_id = :student_id
-         AND event_id = :event_id'
+         WHERE account_id = :account_id
+           AND event_id = :event_id
+           AND status = 'active'"
     );
 
     $registrationQuery->execute([
-        ':student_id' => $studentId,
+        ':account_id' => $accountId,
         ':event_id' => $eventId
     ]);
 
     $isRegistered = (bool) $registrationQuery->fetch();
 }
 
-// Determine whether registration is allowed.
-$canRegister =
-    $event['status'] === 'confirmed' &&
-    ($isOngoing || $hasFutureSchedule);
+
+// Keep the variable name expected by event.php.
+$registered = $isRegistered;
+
+
+// Registration is allowed only for confirmed events
+// with an ongoing or upcoming confirmed schedule.
+$canRegister = !in_array(
+    $event['status'],
+    ['cancelled', 'completed', 'deleted'],
+    true
+);
+
 
 // Handle AJAX event registration.
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST' &&
     isset($_POST['ajax'])
 ) {
+
     header('Content-Type: application/json; charset=UTF-8');
 
-    if (!$studentId) {
+    if (!$accountId) {
+
         http_response_code(401);
 
         echo json_encode([
             'success' => false,
             'message' => 'Please log in before managing your registration.'
         ]);
+
         exit;
     }
 
@@ -152,22 +265,79 @@ if (
         if ($action === 'register') {
 
             if (!$canRegister) {
+
                 echo json_encode([
                     'success' => false,
                     'message' => 'This event is not accepting registrations.'
                 ]);
+
                 exit;
             }
 
-            $query = $pdo->prepare(
-                'INSERT INTO registration (student_id, event_id)
-                 VALUES (:student_id, :event_id)'
+
+            // Check whether a registration already exists.
+            $existingQuery = $pdo->prepare(
+                'SELECT registration_id, status
+                 FROM registration
+                 WHERE account_id = :account_id
+                   AND event_id = :event_id'
             );
 
-            $query->execute([
-                ':student_id' => $studentId,
+            $existingQuery->execute([
+                ':account_id' => $accountId,
                 ':event_id' => $eventId
             ]);
+
+            $existingRegistration = $existingQuery->fetch(PDO::FETCH_ASSOC);
+
+
+            if ($existingRegistration) {
+
+                if ($existingRegistration['status'] === 'active') {
+
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'You are already registered for this event.'
+                    ]);
+
+                    exit;
+                }
+
+
+                // Reactivate a previous registration.
+                $query = $pdo->prepare(
+                    "UPDATE registration
+                     SET status = 'active',
+                         registration_date = CURRENT_TIMESTAMP
+                     WHERE registration_id = :registration_id"
+                );
+
+                $query->execute([
+                    ':registration_id' => $existingRegistration['registration_id']
+                ]);
+
+            } else {
+
+                // Create a new registration.
+                $query = $pdo->prepare(
+                    "INSERT INTO registration (
+                        account_id,
+                        event_id,
+                        status
+                     )
+                     VALUES (
+                        :account_id,
+                        :event_id,
+                        'active'
+                     )"
+                );
+
+                $query->execute([
+                    ':account_id' => $accountId,
+                    ':event_id' => $eventId
+                ]);
+            }
+
 
             echo json_encode([
                 'success' => true,
@@ -177,18 +347,23 @@ if (
 
             exit;
 
+
         } elseif ($action === 'unregister') {
 
+            // Soft-delete the registration.
             $query = $pdo->prepare(
-                'DELETE FROM registration
-                 WHERE student_id = :student_id
-                 AND event_id = :event_id'
+                "UPDATE registration
+                 SET status = 'deleted'
+                 WHERE account_id = :account_id
+                   AND event_id = :event_id
+                   AND status = 'active'"
             );
 
             $query->execute([
-                ':student_id' => $studentId,
+                ':account_id' => $accountId,
                 ':event_id' => $eventId
             ]);
+
 
             if ($query->rowCount() > 0) {
 
@@ -204,10 +379,10 @@ if (
                     'success' => false,
                     'message' => 'You are not registered for this event.'
                 ]);
-
             }
 
             exit;
+
 
         } else {
 
@@ -222,10 +397,12 @@ if (
     } catch (PDOException $e) {
 
         if ($e->getCode() === '23505') {
+
             echo json_encode([
                 'success' => false,
                 'message' => 'You are already registered for this event.'
             ]);
+
             exit;
         }
 
@@ -242,23 +419,6 @@ if (
     }
 }
 
-// Prepare map coordinates from the first schedule with valid coordinates.
-$mapSchedule = null;
 
-foreach ($schedules as $schedule) {
-    if (
-        $schedule['latitude'] !== null &&
-        $schedule['longitude'] !== null &&
-        is_numeric($schedule['latitude']) &&
-        is_numeric($schedule['longitude']) &&
-        (float) $schedule['latitude'] >= -90 &&
-        (float) $schedule['latitude'] <= 90 &&
-        (float) $schedule['longitude'] >= -180 &&
-        (float) $schedule['longitude'] <= 180
-    ) {
-        $mapSchedule = $schedule;
-        break;
-    }
-}
-
+// Event image.
 $eventImage = $event['event_image'] ?? '';

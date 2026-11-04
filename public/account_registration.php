@@ -1,6 +1,10 @@
 <?php
 session_start();
-require_once __DIR__ . '/../php/app/auth/process_login.php';
+
+require_once __DIR__ . '/../php/app/auth/process_account_registration.php';
+
+$isProviderRegistration = ($_GET['redirect'] ?? '') === 'provider';
+$loginPage = $isProviderRegistration ? 'provider_login.php' : 'account_login.php';
 ?>
 
 <!DOCTYPE html>
@@ -10,7 +14,7 @@ require_once __DIR__ . '/../php/app/auth/process_login.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Login | UniSync</title>
+    <title>Create Account | UniSync</title>
 
     <!-- Tailwind CSS -->
     <script src="../javascript/tailwind.js"></script>
@@ -29,17 +33,17 @@ require_once __DIR__ . '/../php/app/auth/process_login.php';
 
         <div class="w-full max-w-md">
 
-            <!-- Login Card -->
-            <div id="loginCard"
+            <!-- Registration Card -->
+            <div id="registrationCard"
                 class="bg-white border border-slate-200 rounded-2xl shadow-sm p-8">
 
                 <div class="text-center mb-8">
                     <h1 class="text-3xl font-bold text-[#1E3A5F]">
-                        Welcome Back
+                        Create an Account
                     </h1>
 
                     <p class="text-slate-500 mt-2">
-                        Log in to your UniSync account.
+                        Join your university community with UniSync.
                     </p>
                 </div>
 
@@ -48,8 +52,28 @@ require_once __DIR__ . '/../php/app/auth/process_login.php';
                     class="hidden mb-5 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
                 </div>
 
-                <!-- Login Form -->
-                <form id="loginForm" class="space-y-5">
+                <!-- Registration Form -->
+                <form id="registrationForm" class="space-y-5">
+
+                    <!-- Full Name -->
+                    <div>
+                        <label for="account_name"
+                            class="block text-sm font-medium text-slate-700 mb-2">
+                            Full Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="account_name"
+                            name="account_name"
+                            placeholder="Enter your full name"
+                            autocomplete="name"
+                            class="w-full px-4 py-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-[#1E3A5F]"
+                            required>
+
+                        <div class="field-error text-red-500 text-sm mt-1"
+                            data-error="account_name"></div>
+                    </div>
 
                     <!-- Email -->
                     <div>
@@ -62,7 +86,7 @@ require_once __DIR__ . '/../php/app/auth/process_login.php';
                             type="email"
                             id="email"
                             name="email"
-                            placeholder="Enter your email address"
+                            placeholder="Enter your university email"
                             autocomplete="email"
                             class="w-full px-4 py-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-[#1E3A5F]"
                             required>
@@ -82,55 +106,80 @@ require_once __DIR__ . '/../php/app/auth/process_login.php';
                             type="password"
                             id="password"
                             name="password"
-                            placeholder="Enter your password"
-                            autocomplete="current-password"
+                            placeholder="Create a password"
+                            autocomplete="new-password"
                             class="w-full px-4 py-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-[#1E3A5F]"
                             required>
 
                         <div class="field-error text-red-500 text-sm mt-1"
                             data-error="password"></div>
+
+                        <p class="text-xs text-slate-400 mt-2">
+                            Minimum 8 characters, with uppercase, lowercase,
+                            and a number.
+                        </p>
                     </div>
 
-                    <!-- Login Button -->
+                    <!-- Confirm Password -->
+                    <div>
+                        <label for="confirm_password"
+                            class="block text-sm font-medium text-slate-700 mb-2">
+                            Confirm Password
+                        </label>
+
+                        <input
+                            type="password"
+                            id="confirm_password"
+                            name="confirm_password"
+                            placeholder="Confirm your password"
+                            autocomplete="new-password"
+                            class="w-full px-4 py-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-[#1E3A5F]"
+                            required>
+
+                        <div class="field-error text-red-500 text-sm mt-1"
+                            data-error="confirm_password"></div>
+                    </div>
+
+                    <!-- Create Account Button -->
                     <button
                         type="submit"
-                        id="loginButton"
+                        id="registerButton"
                         class="w-full bg-[#1E3A5F] hover:bg-[#294d78] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
 
-                        Log In
+                        Create Account
                     </button>
 
                 </form>
 
-                <!-- Registration Link -->
+                <!-- Login Link -->
                 <p class="text-center text-sm text-slate-500 mt-6">
-                    Don't have an account?
-                    <a href="registration.php"
+                    Already have an account?
+                    <a href="<?= htmlspecialchars($loginPage, ENT_QUOTES, 'UTF-8') ?>"
                         class="text-[#1E3A5F] font-semibold hover:underline">
-                        Create an account
+                        Log in
                     </a>
                 </p>
 
             </div>
 
             <!-- Loading Screen -->
-            <div id="loginLoading"
+            <div id="registrationLoading"
                 class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm p-10 text-center">
 
                 <div class="w-12 h-12 border-4 border-slate-200 border-t-[#1E3A5F] rounded-full animate-spin mx-auto mb-5"></div>
 
                 <h2 class="text-xl font-bold text-[#1E3A5F]">
-                    Logging In
+                    Creating Your Account
                 </h2>
 
                 <p class="text-slate-500 mt-2">
-                    Please wait...
+                    Please wait while we set everything up.
                 </p>
 
             </div>
 
             <!-- Success Screen -->
-            <div id="loginSuccess"
+            <div id="registrationSuccess"
                 class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm p-10 text-center">
 
                 <div class="w-16 h-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto mb-5">
@@ -147,15 +196,15 @@ require_once __DIR__ . '/../php/app/auth/process_login.php';
                 </div>
 
                 <h2 class="text-2xl font-bold text-[#1E3A5F]">
-                    Login Successful!
+                    Account Created!
                 </h2>
 
                 <p class="text-slate-500 mt-2">
-                    Welcome back to UniSync.
+                    Your UniSync account has been created successfully.
                 </p>
 
                 <p class="text-sm text-slate-400 mt-5">
-                    Redirecting to your dashboard...
+                    Redirecting you to your dashboard...
                 </p>
 
             </div>
@@ -167,8 +216,8 @@ require_once __DIR__ . '/../php/app/auth/process_login.php';
     <!-- Footer -->
     <?php include '../php/components/footer.php'; ?>
 
-    <!-- Login JavaScript -->
-    <script src="../javascript/app/login.js"></script>
+    <!-- Registration JavaScript -->
+    <script src="../javascript/app/registration.js"></script>
 
 </body>
 </html>

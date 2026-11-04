@@ -153,6 +153,8 @@ If sample data is available, locate and execute the seed SQL file afterward.
 
 **Important:** Check the SQL scripts before running them. Initialization scripts may contain commands that drop and recreate existing tables, which can delete your current data.
 
+For an existing database that still has the legacy `STUDENT` table, back it up and run [`db/migrate_student_to_account.sql`](db/migrate_student_to_account.sql) once before deploying the account-based application. This migration renames the identity and foreign-key columns in place. Do not run `db/init.sql` for this migration because it drops tables and data.
+
 ### Step 4: Run the Application
 
 Follow the current project configuration and identify its PHP entry point.
@@ -255,7 +257,7 @@ After pushing your branch:
 
 ## 7. Application Roles
 
-UniSync uses a single student account system. A student who creates an organization automatically becomes its Admin.
+UniSync uses a single account system. An account that creates an organization automatically becomes its Admin.
 
 Organization roles determine what a member can do.
 
@@ -273,9 +275,9 @@ Students do not need to belong to an organization to register for its public eve
 
 A few important rules guide how event registration works:
 
-- A student can register for an event only once.
-- Being an organization member does not automatically register a student for its events.
-- Public events can be joined by students outside the hosting organization.
+- An account can register for an event only once.
+- Being an organization member does not automatically register an account for its events.
+- Public events can be joined by accounts outside the hosting organization.
 - Only authorized organization members can manage their organization's events.
 - An event's end time must be later than its start time.
 - The system prevents overlapping events from being scheduled at the same venue and date.
@@ -350,7 +352,7 @@ Make sure you:
 
 ## 11. Project Scope
 
-The current development focuses on the core UniSync features: student accounts, event browsing, registration, organization management, event scheduling, and dashboards.
+The current development focuses on the core UniSync features: account registration, event browsing, registration, organization management, event scheduling, and dashboards.
 
 Some features are intentionally outside the current implementation scope, including:
 

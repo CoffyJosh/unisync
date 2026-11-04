@@ -1,29 +1,28 @@
-
 <?php
 session_start();
 
-$studentId = $_SESSION['student_id'] ?? null;
+$accountId = $_SESSION['account_id'] ?? null;
 
-if (!$studentId) {
-    header('Location: login.php');
+if (!$accountId) {
+    header('Location: account_login.php');
     exit;
 }
 
 require_once __DIR__ . '/../php/db.php';
 
-// Get the current student's information.
+// Get the current account's information.
 $stmt = $pdo->prepare("
-    SELECT student_name, email
-    FROM student
-    WHERE student_id = :student_id
+    SELECT account_name, email
+    FROM account
+    WHERE account_id = :account_id
 ");
 
-$stmt->execute(['student_id' => $studentId]);
-$student = $stmt->fetch(PDO::FETCH_ASSOC);
+$stmt->execute(['account_id' => $accountId]);
+$account = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$student) {
+if (!$account) {
     session_destroy();
-    header('Location: login.php');
+    header('Location: account_login.php');
     exit;
 }
 ?>
@@ -63,11 +62,11 @@ if (!$student) {
 
             <div>
                 <h2 class="text-lg font-bold text-[#1E3A5F]">
-                    <?= htmlspecialchars($student['student_name']) ?>
+                    <?= htmlspecialchars($account['account_name']) ?>
                 </h2>
 
                 <p class="text-sm text-slate-500 mt-1">
-                    <?= htmlspecialchars($student['email']) ?>
+                    <?= htmlspecialchars($account['email']) ?>
                 </p>
 
                 <p class="text-xs text-slate-400 mt-2">
@@ -165,11 +164,34 @@ if (!$student) {
                             </p>
                         </div>
 
-                        <input
-                            type="search"
-                            id="organizationSearch"
-                            placeholder="Search organization..."
-                            class="w-full sm:w-72 border border-slate-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-900">
+                        <!-- Search + Create Organization -->
+                        <div class="flex flex-col sm:flex-row sm:items-stretch gap-3">
+
+                            <input
+                                type="search"
+                                id="organizationSearch"
+                                placeholder="Search organization..."
+                                class="w-full sm:w-64 border border-slate-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-900">
+
+                            <a
+                                href="create_organization.php"
+                                class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-[#1E3A5F] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#152c49] focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:ring-offset-2">
+
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    class="w-4 h-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    stroke-width="2.5">
+                                    <path stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M12 5v14M5 12h14" />
+                                </svg>
+
+                                Create Organization
+                            </a>
+
+                        </div>
 
                     </div>
 

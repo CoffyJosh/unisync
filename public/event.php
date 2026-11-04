@@ -1,416 +1,551 @@
 
-
 <?php
 session_start();
-require_once __DIR__ . '/../php/app/event/get_event.php';
-?>
 
+require_once __DIR__ . '/../php/app/event/get_event.php';
+
+function eventEscape($value): string
+{
+    return htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
+}
+
+$eventStatus = strtolower((string) ($event['status'] ?? ''));
+$eventName = $event['event_name'] ?? 'Event';
+$eventDescription = $event['description'] ?? '';
+$organizationName = $event['organization_name'] ?? 'Organization';
+
+$statusClasses = [
+    'pending' => 'bg-yellow-400/10 text-yellow-200 border border-yellow-300/20',
+    'confirmed' => 'bg-green-400/10 text-green-200 border border-green-300/20',
+    'completed' => 'bg-blue-400/10 text-blue-200 border border-blue-300/20',
+    'deleted' => 'bg-red-400/10 text-red-200 border border-red-300/20',
+    'cancelled' => 'bg-red-400/10 text-red-200 border border-red-300/20'
+];
+
+$statusClass = $statusClasses[$eventStatus]
+    ?? 'bg-white/10 text-white border border-white/20';
+
+$publicSchedules = array_values(array_filter(
+    $schedules,
+    static function ($schedule) {
+        return in_array(
+            strtolower((string) ($schedule['schedule_status'] ?? '')),
+            ['pending', 'confirmed', 'completed'],
+            true
+        );
+    }
+));
+?>
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>
-        <?php echo htmlspecialchars($event['event_name']); ?> | UniSync
-    </title>
+    <title><?php echo eventEscape($eventName); ?> | UniSync</title>
 
-    <script src="../javascript/tailwind.js"></script>
     <script src="../javascript/jquery.js"></script>
+    <script src="../javascript/tailwind.js"></script>
 
-    <!-- Leaflet Map CSS -->
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    >
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
-    <!-- Leaflet Map JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
     <style>
         #eventMap {
-            height: 350px;
             width: 100%;
+            height: 320px;
             z-index: 1;
+            border-radius: 0.75rem;
+        }
+
+        .schedule-map-option {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .schedule-map-option:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .schedule-map-option.is-selected {
+            background: #f8fafc;
+            border-color: #1e3a5f;
+        }
+
+        .schedule-map-option:focus-visible {
+            outline: 2px solid #64748b;
+            outline-offset: 2px;
+        }
+
+        .schedule-selection-icon {
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+            color: #cbd5e1;
+            transition: color 0.15s ease;
+        }
+
+        .schedule-map-option.is-selected .schedule-selection-icon {
+            color: #1e3a5f;
+        }
+
+        .event-banner {
+            background: linear-gradient(135deg, #1e3a5f, #294d78);
+        }
+
+        @media (max-width: 640px) {
+            #eventMap {
+                height: 260px;
+            }
         }
     </style>
 </head>
 
-<body class="min-h-screen flex flex-col bg-slate-50">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <?php include '../php/components/navbar.php'; ?>
+    <?php include __DIR__ . '/../php/components/navbar.php'; ?>
 
-    <main class="flex-1 w-full max-w-6xl mx-auto px-6 lg:px-8 py-10">
+    <main class="flex-1">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        <!-- Back Navigation -->
-        <a href="browse.php"
-           class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-[#1E3A5F] mb-6">
+            <a href="javascript:history.back()"
+               class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 mb-6">
+                <i class="fa-solid fa-arrow-left"></i>
+                Back
+            </a>
 
-            <i class="fa-solid fa-arrow-left"></i>
-            Back to Events
+            <!-- Event banner -->
+            <section class="event-banner rounded-2xl overflow-hidden mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-5">
 
-        </a>
+                    <div class="md:col-span-3 p-6 sm:p-8 lg:p-10 flex flex-col justify-center">
+                        <p class="text-sm text-blue-100 mb-3">
+                            <?php echo eventEscape($organizationName); ?>
+                        </p>
 
-        <!-- Event Banner -->
-        <div class="w-full h-64 md:h-96 rounded-2xl overflow-hidden bg-slate-200 mb-8">
+                        <h1 class="text-3xl sm:text-4xl font-bold text-white leading-tight">
+                            <?php echo eventEscape($eventName); ?>
+                        </h1>
 
-            <?php $displayImage = !empty($eventImage)
-                ? $eventImage
-                : '../assets/images/default-event.jpg';
-            ?>
+                        <div class="flex flex-wrap items-center gap-3 mt-5">
+                            <span class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm text-white">
+                                <i class="fa-solid fa-calendar-days"></i>
+                                University Event
+                            </span>
 
-            <img
-                src="<?php echo htmlspecialchars($displayImage); ?>"
-                alt="<?php echo htmlspecialchars($event['event_name']); ?>"
-                class="w-full h-full object-cover"
-                onerror="this.onerror=null; this.src='../assets/images/default-event.jpg';"
-            >
-
-        </div>
-
-        <!-- Event Heading -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-            <div class="lg:col-span-2 space-y-8">
-
-                <section>
-
-                    <div class="flex flex-wrap items-center gap-3 mb-4">
-
-                        <?php
-                        $statusColors = [
-                            'confirmed' => 'bg-green-100 text-green-700',
-                            'pending' => 'bg-yellow-100 text-yellow-700',
-                            'cancelled' => 'bg-red-100 text-red-700',
-                            'completed' => 'bg-slate-200 text-slate-600'
-                        ];
-
-                        $statusClass = $statusColors[$event['status']]
-                            ?? 'bg-slate-100 text-slate-600';
-                        ?>
-
-                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase <?php echo $statusClass; ?>">
-                            <?php echo htmlspecialchars($event['status']); ?>
-                        </span>
-
-                        <span class="text-sm text-slate-500">
-                            <?php echo htmlspecialchars($event['organization_name']); ?>
-                        </span>
-
+                            <span class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm <?php echo $statusClass; ?>">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <?php echo eventEscape(ucfirst($eventStatus)); ?>
+                            </span>
+                        </div>
                     </div>
 
-                    <h1 class="text-3xl md:text-4xl font-bold text-[#1E3A5F]">
-                        <?php echo htmlspecialchars($event['event_name']); ?>
-                    </h1>
-
-                </section>
-
-                <!-- Event Description -->
-                <section class="bg-white border border-slate-200 rounded-xl p-6">
-
-                    <h2 class="text-xl font-bold text-[#1E3A5F] mb-4">
-                        About This Event
-                    </h2>
-
-                    <p class="text-slate-600 leading-relaxed whitespace-pre-line">
-                        <?php echo htmlspecialchars($event['description'] ?: 'No event description available.'); ?>
-                    </p>
-
-                </section>
-
-                <!-- Event Schedule -->
-                <section class="bg-white border border-slate-200 rounded-xl p-6">
-
-                    <h2 class="text-xl font-bold text-[#1E3A5F] mb-5">
-                        Event Schedule
-                    </h2>
-
-                    <?php if (empty($schedules)): ?>
-
-                        <p class="text-slate-500">
-                            No schedule has been assigned to this event yet.
-                        </p>
-
-                    <?php else: ?>
-
-                        <div class="space-y-5">
-
-                            <?php foreach ($schedules as $schedule): ?>
-
-                                <div class="flex gap-4">
-
-                                    <div class="w-11 h-11 shrink-0 rounded-xl bg-blue-50 text-[#1E3A5F] flex items-center justify-center">
-                                        <i class="fa-solid fa-calendar-day text-lg"></i>
-                                    </div>
-
-                                    <div class="min-w-0">
-
-                                        <h3 class="font-semibold text-slate-800">
-                                            <?php echo date('F d, Y', strtotime($schedule['event_date'])); ?>
-                                        </h3>
-
-                                        <p class="text-sm text-slate-500 mt-1">
-                                            <?php
-                                            echo date('g:i A', strtotime($schedule['start_time']));
-                                            echo ' - ';
-                                            echo date('g:i A', strtotime($schedule['end_time']));
-                                            ?>
-                                        </p>
-
-                                        <p class="text-sm text-slate-500 mt-1">
-                                            <i class="fa-solid fa-location-dot mr-1"></i>
-                                            <?php echo htmlspecialchars($schedule['venue_name']); ?>
-                                        </p>
-
-                                    </div>
-
+                    <div class="md:col-span-2 h-[175px] md:h-[230px] overflow-hidden bg-slate-200">
+                        <?php if (!empty($eventImage)): ?>
+                            <img
+                                src="<?php echo eventEscape($eventImage); ?>"
+                                alt="<?php echo eventEscape($eventName); ?>"
+                                class="w-full h-full object-cover"
+                            >
+                        <?php else: ?>
+                            <div class="w-full h-full flex items-center justify-center bg-slate-100">
+                                <div class="text-center text-slate-400">
+                                    <i class="fa-regular fa-calendar text-5xl mb-3"></i>
+                                    <p class="text-sm">Event image unavailable</p>
                                 </div>
-
-                            <?php endforeach; ?>
-
-                        </div>
-
-                    <?php endif; ?>
-
-                </section>
-
-                <!-- Venue and Map -->
-                <section class="bg-white border border-slate-200 rounded-xl p-6">
-
-                    <h2 class="text-xl font-bold text-[#1E3A5F] mb-5">
-                        Venue Location
-                    </h2>
-
-                    <?php if (!empty($schedules)): ?>
-
-                        <?php foreach ($schedules as $schedule): ?>
-
-                            <div class="mb-5">
-
-                                <h3 class="font-semibold text-slate-800">
-                                    <?php echo htmlspecialchars($schedule['venue_name']); ?>
-                                </h3>
-
-                                <p class="text-sm text-slate-500 mt-1">
-                                    <i class="fa-solid fa-map-pin mr-1"></i>
-                                    <?php echo htmlspecialchars($schedule['location']); ?>
-                                </p>
-
                             </div>
+                        <?php endif; ?>
+                    </div>
 
-                        <?php endforeach; ?>
+                </div>
+            </section>
 
-                    <?php else: ?>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
-                        <p class="text-slate-500 mb-4">
-                            Venue information is not available yet.
-                        </p>
+                <!-- Main content -->
+                <div class="lg:col-span-2 space-y-8">
 
-                    <?php endif; ?>
+                    <!-- About -->
+                    <section class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8">
+                        <h2 class="text-xl font-bold text-slate-900 mb-4">
+                            About This Event
+                        </h2>
 
-                    <?php if ($mapSchedule): ?>
-
-                        <div id="eventMap"
-                             class="rounded-xl overflow-hidden border border-slate-200"
-                             data-lat="<?php echo htmlspecialchars((string)$mapSchedule['latitude']); ?>"
-                             data-lng="<?php echo htmlspecialchars((string)$mapSchedule['longitude']); ?>"
-                             data-venue="<?php echo htmlspecialchars($mapSchedule['venue_name'], ENT_QUOTES); ?>">
-                        </div>
-
-                        <p class="text-xs text-slate-400 mt-3">
-                            Map pin shows the coordinates saved for this venue.
-                        </p>
-
-                        <a
-                            href="https://www.openstreetmap.org/?mlat=<?php echo urlencode((string)$mapSchedule['latitude']); ?>&mlon=<?php echo urlencode((string)$mapSchedule['longitude']); ?>#map=18/<?php echo urlencode((string)$mapSchedule['latitude']); ?>/<?php echo urlencode((string)$mapSchedule['longitude']); ?>"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="inline-flex items-center gap-2 mt-3 text-sm font-semibold text-[#1E3A5F] hover:underline">
-
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                            Open in OpenStreetMap
-
-                        </a>
-
-                    <?php else: ?>
-
-                        <div class="rounded-xl bg-slate-100 p-8 text-center">
-
-                            <i class="fa-solid fa-map-location-dot text-4xl text-slate-400 mb-3"></i>
-
-                            <p class="font-medium text-slate-600">
-                                Map coordinates unavailable
+                        <?php if (trim((string) $eventDescription) !== ''): ?>
+                            <div class="text-slate-600 leading-7 whitespace-pre-line"><?php
+                                echo eventEscape($eventDescription);
+                            ?></div>
+                        <?php else: ?>
+                            <p class="text-slate-500">
+                                No event description has been provided.
                             </p>
+                        <?php endif; ?>
+                    </section>
+
+                    <!-- Event schedules and shared map -->
+                    <section class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8">
+
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold text-slate-900">
+                                Event Schedules
+                            </h2>
 
                             <p class="text-sm text-slate-500 mt-1">
-                                The venue's map location has not been set yet.
+                                Select a schedule to view its venue on the map.
                             </p>
-
                         </div>
 
-                    <?php endif; ?>
+                        <?php if (empty($publicSchedules)): ?>
 
-                </section>
+                            <div class="rounded-xl border border-slate-200 p-6 text-center">
+                                <i class="fa-regular fa-calendar-xmark text-3xl text-slate-300 mb-3"></i>
 
-            </div>
+                                <p class="font-medium text-slate-700">
+                                    No confirmed schedules yet
+                                </p>
 
-            <!-- Registration and Countdown Sidebar -->
-            <aside class="space-y-6 lg:sticky lg:top-24 lg:self-start">
+                                <p class="text-sm text-slate-500 mt-1">
+                                    Schedule details will appear here when available.
+                                </p>
+                            </div>
 
-                <!-- Countdown -->
-                <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                        <?php else: ?>
 
-                    <h2 class="font-bold text-[#1E3A5F] mb-4">
-                        Event Countdown
-                    </h2>
+                            <!-- Clickable schedule cards -->
+                            <div id="mapScheduleList" class="space-y-3">
 
-                    <?php if ($nextSchedule): ?>
+                                <?php foreach ($publicSchedules as $index => $schedule): ?>
 
-                        <div id="eventCountdown"
-                             data-start="<?php echo htmlspecialchars($nextSchedule['start_datetime']); ?>">
+                                    <?php
+                                    $scheduleDate = !empty($schedule['event_date'])
+                                        ? date('F j, Y', strtotime($schedule['event_date']))
+                                        : 'Date not specified';
 
-                            <p class="text-sm text-slate-500 mb-3">
-                                Event starts in
-                            </p>
+                                    $startTime = !empty($schedule['start_time'])
+                                        ? date('g:i A', strtotime($schedule['start_time']))
+                                        : '';
 
-                            <div class="grid grid-cols-4 gap-2">
+                                    $endTime = !empty($schedule['end_time'])
+                                        ? date('g:i A', strtotime($schedule['end_time']))
+                                        : '';
 
-                                <div class="bg-slate-50 rounded-lg p-3 text-center">
-                                    <p id="countdownDays" class="text-2xl font-bold text-[#1E3A5F]">00</p>
-                                    <p class="text-xs text-slate-400">Days</p>
+                                    $scheduleStatus = strtolower(
+                                        (string) ($schedule['schedule_status'] ?? '')
+                                    );
+                                    ?>
+
+                                    <button
+                                        type="button"
+                                        class="schedule-map-option w-full text-left rounded-xl p-4"
+                                        data-schedule-id="<?php echo (int) $schedule['schedule_id']; ?>"
+                                        aria-pressed="false"
+                                    >
+
+                                        <div class="flex items-center gap-4">
+
+                                            <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
+                                                <i class="fa-regular fa-calendar text-lg"></i>
+                                            </div>
+
+                                            <div class="min-w-0 flex-1">
+
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <h3 class="font-semibold text-slate-900">
+                                                        Schedule <?php echo $index + 1; ?>
+                                                    </h3>
+
+                                                    <span class="text-xs text-slate-400">
+                                                        <?php echo eventEscape(ucfirst($scheduleStatus)); ?>
+                                                    </span>
+                                                </div>
+
+                                                <p class="text-sm text-slate-600 mt-2">
+                                                    <i class="fa-regular fa-calendar w-5 text-slate-400"></i>
+                                                    <?php echo eventEscape($scheduleDate); ?>
+                                                </p>
+
+                                                <?php if ($startTime !== '' || $endTime !== ''): ?>
+                                                    <p class="text-sm text-slate-600 mt-1">
+                                                        <i class="fa-regular fa-clock w-5 text-slate-400"></i>
+
+                                                        <?php
+                                                        echo eventEscape($startTime);
+
+                                                        if ($startTime !== '' && $endTime !== '') {
+                                                            echo ' - ';
+                                                        }
+
+                                                        echo eventEscape($endTime);
+                                                        ?>
+                                                    </p>
+                                                <?php endif; ?>
+
+                                                <p class="text-sm text-slate-600 mt-1">
+                                                    <i class="fa-solid fa-location-dot w-5 text-slate-400"></i>
+                                                    <?php echo eventEscape($schedule['venue_name'] ?? 'Venue not specified'); ?>
+                                                </p>
+
+                                                <?php if (!empty($schedule['location'])): ?>
+                                                    <p class="text-sm text-slate-500 mt-1 ml-6">
+                                                        <?php echo eventEscape($schedule['location']); ?>
+                                                    </p>
+                                                <?php endif; ?>
+
+                                            </div>
+
+                                            <!-- Selection circle on the right -->
+                                            <div class="flex-shrink-0 flex items-center justify-center">
+                                                <i class="fa-regular fa-circle schedule-selection-icon"
+                                                   aria-hidden="true"></i>
+                                            </div>
+
+                                        </div>
+
+                                    </button>
+
+                                <?php endforeach; ?>
+
+                            </div>
+
+
+                            <!-- Shared map -->
+                            <div class="mt-8">
+
+                                <div class="mb-4">
+                                    <h3 class="text-lg font-bold text-slate-900">
+                                        Venue Map
+                                    </h3>
+
+                                    <p class="text-sm text-slate-500 mt-1">
+                                        Showing the location of the selected schedule.
+                                    </p>
                                 </div>
 
-                                <div class="bg-slate-50 rounded-lg p-3 text-center">
-                                    <p id="countdownHours" class="text-2xl font-bold text-[#1E3A5F]">00</p>
-                                    <p class="text-xs text-slate-400">Hours</p>
+                                <div id="eventMapContainer">
+                                    <div
+                                        id="eventMap"
+                                        aria-label="Map showing the selected event venue"
+                                    ></div>
                                 </div>
 
-                                <div class="bg-slate-50 rounded-lg p-3 text-center">
-                                    <p id="countdownMinutes" class="text-2xl font-bold text-[#1E3A5F]">00</p>
-                                    <p class="text-xs text-slate-400">Minutes</p>
-                                </div>
+                                <p
+                                    id="mapUnavailable"
+                                    class="hidden text-sm text-slate-500 mt-3"
+                                >
+                                    Coordinates are not available for this venue.
+                                </p>
 
-                                <div class="bg-slate-50 rounded-lg p-3 text-center">
-                                    <p id="countdownSeconds" class="text-2xl font-bold text-[#1E3A5F]">00</p>
-                                    <p class="text-xs text-slate-400">Seconds</p>
+                                <div class="mt-4">
+                                    <a
+                                        id="openMapLink"
+                                        href="#"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="hidden inline-flex items-center gap-2 text-sm font-semibold text-[#1E3A5F] hover:underline"
+                                    >
+                                        Open location in OpenStreetMap
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    </a>
                                 </div>
 
                             </div>
 
+
+                            <!-- Schedule data for JavaScript -->
+                            <script type="application/json" id="mapScheduleData"><?php
+                                echo json_encode(
+                                    $mapSchedules,
+                                    JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
+                                );
+                            ?></script>
+
+                        <?php endif; ?>
+
+                    </section>
+
+                </div>
+
+
+                <!-- Sidebar -->
+                <aside class="space-y-6 lg:sticky lg:top-24 lg:self-start">
+
+                    <!-- Countdown -->
+                    <section class="bg-white border border-slate-200 rounded-2xl p-6">
+
+                        <h2 class="text-lg font-bold text-slate-900 mb-5">
+                            Event Countdown
+                        </h2>
+
+                        <div
+                            id="eventTiming"
+                            data-status="<?php echo eventEscape($eventStatus); ?>"
+                            data-schedules="<?php
+                                echo htmlspecialchars(
+                                    json_encode($timingSchedules),
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                            ?>"
+                        >
+
+                            <div id="eventCountdown">
+
+                                <p class="text-sm text-slate-500 mb-4">
+                                    Time until the next schedule
+                                </p>
+
+                                <div class="grid grid-cols-4 gap-2 text-center">
+
+                                    <?php foreach ([
+                                        'countdownDays' => 'Days',
+                                        'countdownHours' => 'Hours',
+                                        'countdownMinutes' => 'Minutes',
+                                        'countdownSeconds' => 'Seconds'
+                                    ] as $countdownId => $countdownLabel): ?>
+
+                                        <div class="rounded-lg bg-slate-50 border border-slate-200 p-2">
+                                            <p
+                                                id="<?php echo $countdownId; ?>"
+                                                class="text-xl font-bold text-[#1E3A5F]"
+                                            >00</p>
+
+                                            <p class="text-xs text-slate-500">
+                                                <?php echo $countdownLabel; ?>
+                                            </p>
+                                        </div>
+
+                                    <?php endforeach; ?>
+
+                                </div>
+                            </div>
+
+                            <div id="eventOngoing" class="hidden rounded-lg bg-green-50 text-green-700 p-4 text-sm">
+                                <i class="fa-solid fa-circle-check mr-2"></i>
+                                A schedule is currently ongoing.
+                            </div>
+
+                            <div id="eventEnded" class="hidden rounded-lg bg-slate-50 text-slate-600 p-4 text-sm">
+                                <i class="fa-regular fa-calendar-check mr-2"></i>
+                                All schedules have ended.
+                            </div>
+
+                            <div id="eventNoSchedule" class="hidden rounded-lg bg-slate-50 text-slate-600 p-4 text-sm">
+                                <i class="fa-regular fa-calendar mr-2"></i>
+                                Waiting for schedule confirmation.
+                            </div>
+
+                            <div id="eventCancelled" class="hidden rounded-lg bg-red-50 text-red-700 p-4 text-sm">
+                                <i class="fa-solid fa-circle-xmark mr-2"></i>
+                                This event has been cancelled.
+                            </div>
+
+                            <div id="eventCompleted" class="hidden rounded-lg bg-slate-50 text-slate-600 p-4 text-sm">
+                                <i class="fa-solid fa-circle-check mr-2"></i>
+                                This event has been completed.
+                            </div>
+
                         </div>
 
-                    <?php elseif ($isOngoing): ?>
+                    </section>
 
-                        <div class="bg-green-50 text-green-700 rounded-lg p-4 text-center font-semibold">
-                            <i class="fa-solid fa-circle-play mr-2"></i>
-                            This event is currently ongoing!
-                        </div>
 
-                    <?php elseif ($event['status'] === 'cancelled'): ?>
+                    <!-- Registration -->
+                    <section class="bg-white border border-slate-200 rounded-2xl p-6">
 
-                        <div class="bg-red-50 text-red-600 rounded-lg p-4 text-center font-semibold">
-                            This event has been cancelled.
-                        </div>
+                        <h2 class="text-lg font-bold text-slate-900 mb-2">
+                            Event Registration
+                        </h2>
 
-                    <?php else: ?>
-
-                        <div class="bg-slate-100 text-slate-600 rounded-lg p-4 text-center font-semibold">
-                            This event has ended.
-                        </div>
-
-                    <?php endif; ?>
-
-                </section>
-
-                <!-- Registration -->
-                <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-
-                    <h2 class="font-bold text-[#1E3A5F] mb-3">
-                        Event Registration
-                    </h2>
-
-                    <?php if (!$studentId): ?>
-
-                        <p class="text-sm text-slate-500 mb-4">
-                            Log in to your UniSync account to register for this event.
+                        <p class="text-sm text-slate-500 mb-5">
+                            Register to reserve your place at this event.
                         </p>
 
-                        <a href="login.php"
-                        class="block w-full text-center bg-[#1E3A5F] text-white font-semibold py-3 rounded-lg hover:bg-[#294D78]">
-                            Log In to Register
-                        </a>
+                        <div
+                            id="registrationMessage"
+                            class="hidden rounded-lg p-3 text-sm mb-4"
+                        ></div>
 
-                    <?php else: ?>
+                        <?php if (empty($accountId)): ?>
 
-                        <!-- Registration Confirmation -->
-                        <div id="registrationStatus"
-                            class="<?php echo $isRegistered ? '' : 'hidden'; ?>">
+                            <a
+                                href="login.php"
+                                class="block w-full text-center bg-[#1E3A5F] text-white font-semibold py-3 rounded-lg hover:bg-[#294D78] transition-colors"
+                            >
+                                Log In to Register
+                            </a>
 
-                            <div class="bg-green-50 text-green-700 rounded-lg p-4 text-center">
+                        <?php elseif (!empty($registered)): ?>
 
-                                <i class="fa-solid fa-circle-check text-xl mb-2"></i>
+                            <div id="registrationStatus">
 
-                                <p class="font-semibold">
-                                    You're registered!
-                                </p>
+                                <div class="bg-green-50 text-green-700 rounded-lg p-4 text-center">
+                                    <i class="fa-solid fa-circle-check text-xl mb-2"></i>
 
-                                <p class="text-sm mt-1">
-                                    You're already registered for this event.
+                                    <p class="font-semibold">You're registered!</p>
+
+                                    <p class="text-sm mt-1">
+                                        You're already registered for this event.
+                                    </p>
+                                </div>
+
+                                <p class="text-sm text-slate-500 text-center mt-3">
+                                    Changed your mind?
+
+                                    <a
+                                        href="#"
+                                        id="unregisterLink"
+                                        class="font-semibold text-red-600 hover:underline"
+                                    >
+                                        Cancel registration
+                                    </a>
                                 </p>
 
                             </div>
 
-                            <!-- Cancellation link outside the green box -->
-                            <p class="text-sm text-slate-500 text-center mt-3">
-                                Changed your mind?
+                        <?php elseif (!empty($canRegister)): ?>
 
-                                <a href="#"
-                                id="unregisterLink"
-                                class="font-semibold text-red-600 hover:underline">
-                                    Cancel registration
-                                </a>
-                            </p>
-
-                        </div>
-
-                        <!-- Registration Button -->
-                        <?php if (!$isRegistered && $canRegister): ?>
+                            <div id="registrationStatus"></div>
 
                             <button
                                 id="registerButton"
                                 type="button"
-                                class="w-full bg-[#1E3A5F] text-white font-semibold py-3 rounded-lg hover:bg-[#294D78] transition-colors">
-
+                                class="w-full bg-[#1E3A5F] text-white font-semibold py-3 rounded-lg hover:bg-[#294D78] transition-colors"
+                            >
                                 Register for Event
-
                             </button>
 
-                        <?php elseif (!$isRegistered): ?>
+                        <?php else: ?>
 
-                            <p class="text-sm text-slate-500">
-                                Registration is currently unavailable for this event.
-                            </p>
+                            <div
+                                id="registrationStatus"
+                                class="rounded-lg bg-slate-50 border border-slate-200 p-4 text-center"
+                            >
+                                <i class="fa-solid fa-circle-info text-slate-400 text-xl mb-2"></i>
+
+                                <p class="text-sm text-slate-600">
+                                    Registration is currently unavailable.
+                                </p>
+                            </div>
 
                         <?php endif; ?>
 
-                        <div id="registrationMessage"
-                            class="hidden mt-4 p-3 rounded-lg text-sm">
-                        </div>
+                    </section>
 
-                    <?php endif; ?>
+                </aside>
 
-                </section>
-
-            </aside>
-
+            </div>
         </div>
-
     </main>
 
-    <?php include '../php/components/footer.php'; ?>
+    <?php include __DIR__ . '/../php/components/footer.php'; ?>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="../javascript/app/event.js"></script>
 
 </body>

@@ -5,9 +5,9 @@ require_once __DIR__ . '/../../db.php';
 
 header('Content-Type: application/json');
 
-$studentId = $_SESSION['student_id'] ?? null;
+$accountId = $_SESSION['account_id'] ?? null;
 
-if (!$studentId) {
+if (!$accountId) {
     http_response_code(401);
     echo json_encode([
         'success' => false,
@@ -33,12 +33,15 @@ try {
              INNER JOIN event e ON r.event_id = e.event_id
              INNER JOIN organization o
                 ON e.organization_id = o.organization_id
-             WHERE r.student_id = :student_id
-               AND o.organization_name ILIKE :search"
+             WHERE r.account_id = :account_id
+             AND r.status = 'active'
+             AND e.status <> 'deleted'
+             AND o.status = 'active'
+             AND o.organization_name ILIKE :search"
         );
 
         $countQuery->execute([
-            ':student_id' => $studentId,
+            ':account_id' => $accountId,
             ':search' => '%' . $search . '%'
         ]);
 
@@ -56,19 +59,20 @@ try {
                     SELECT MIN(es.event_date)
                     FROM event_schedule es
                     WHERE es.event_id = e.event_id
-                      AND es.event_date >= CURRENT_DATE
+                        AND es.status = 'active'
+                        AND es.event_date >= CURRENT_DATE
                 ) AS next_event_date
              FROM registration r
              INNER JOIN event e ON r.event_id = e.event_id
              INNER JOIN organization o
                 ON e.organization_id = o.organization_id
-             WHERE r.student_id = :student_id
+             WHERE r.account_id = :account_id
                AND o.organization_name ILIKE :search
              ORDER BY r.registration_date DESC, r.registration_id DESC
              LIMIT :limit OFFSET :offset"
         );
 
-        $query->bindValue(':student_id', $studentId);
+        $query->bindValue(':account_id', $accountId);
         $query->bindValue(':search', '%' . $search . '%');
         $query->bindValue(':limit', $limit, PDO::PARAM_INT);
         $query->bindValue(':offset', $offset, PDO::PARAM_INT);
@@ -147,12 +151,14 @@ try {
              FROM membership m
              INNER JOIN organization o
                 ON m.organization_id = o.organization_id
-             WHERE m.student_id = :student_id
-               AND o.organization_name ILIKE :search"
+             WHERE m.account_id = :account_id
+                AND m.status = 'active'
+                AND o.status = 'active'
+                AND o.organization_name ILIKE :search"
         );
 
         $countQuery->execute([
-            ':student_id' => $studentId,
+            ':account_id' => $accountId,
             ':search' => '%' . $search . '%'
         ]);
 
@@ -169,13 +175,13 @@ try {
              FROM membership m
              INNER JOIN organization o
                 ON m.organization_id = o.organization_id
-             WHERE m.student_id = :student_id
+             WHERE m.account_id = :account_id
                AND o.organization_name ILIKE :search
              ORDER BY o.organization_name ASC
              LIMIT :limit OFFSET :offset"
         );
 
-        $query->bindValue(':student_id', $studentId);
+        $query->bindValue(':account_id', $accountId);
         $query->bindValue(':search', '%' . $search . '%');
         $query->bindValue(':limit', $limit, PDO::PARAM_INT);
         $query->bindValue(':offset', $offset, PDO::PARAM_INT);
@@ -212,8 +218,20 @@ try {
 
                 </div>
 
+                <?php
+                $slug = strtolower(
+                    preg_replace(
+                        '/[^a-zA-Z0-9]+/',
+                        '-',
+                        $organization['organization_name']
+                    )
+                );
+
+                $slug = trim($slug, '-');
+                ?>
+
                 <a
-                    href="organization.php?id=<?= (int)$organization['organization_id'] ?>"
+                    href="organization.php?id=<?= (int)$organization['organization_id'] ?>&name=<?= urlencode($slug) ?>"
                     class="inline-flex justify-center px-4 py-2 rounded-lg bg-[#1E3A5F] text-white text-sm font-semibold hover:bg-[#294D78]">
                     View Organization
                 </a>

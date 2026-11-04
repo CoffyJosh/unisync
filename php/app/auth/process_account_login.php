@@ -2,8 +2,8 @@
 <?php
 require_once __DIR__ . '/../../db.php';
 
-// Redirect students who are already logged in.
-if (isset($_SESSION['student_id'])) {
+// Redirect accounts that are already logged in.
+if (isset($_SESSION['account_id'])) {
     header('Location: index.php');
     exit;
 }
@@ -36,10 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
     }
 
     try {
-        // Find the student using their email.
+        // Find the account using its email.
         $query = $pdo->prepare(
-            'SELECT student_id, student_name, email, password_hash
-             FROM student
+            'SELECT account_id, account_name, email, password_hash, account_status
+             FROM account
              WHERE email = :email
              LIMIT 1'
         );
@@ -48,10 +48,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             ':email' => $email
         ]);
 
-        $student = $query->fetch(PDO::FETCH_ASSOC);
+        $account = $query->fetch(PDO::FETCH_ASSOC);
 
         // Verify the password.
-        if (!$student || !password_verify($password, $student['password_hash'])) {
+        if (
+            !$account ||
+            !password_verify($password, $account['password_hash'])
+        ) {
             echo json_encode([
                 'success' => false,
                 'errors' => [
@@ -61,13 +64,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             exit;
         }
 
+        // Prevent disabled or deleted accounts from logging in.
+        if ($account['account_status'] !== 'active') {
+            echo json_encode([
+                'success' => false,
+                'errors' => [
+                    'general' => ['This account is currently unavailable.']
+                ]
+            ]);
+            exit;
+        }
+
         // Regenerate session ID after successful authentication.
         session_regenerate_id(true);
 
-        // Store student information in the session.
-        $_SESSION['student_id'] = $student['student_id'];
-        $_SESSION['student_name'] = $student['student_name'];
-        $_SESSION['email'] = $student['email'];
+        // Store account information in the session.
+        $_SESSION['account_id'] = $account['account_id'];
+        $_SESSION['account_name'] = $account['account_name'];
+        $_SESSION['email'] = $account['email'];
 
         echo json_encode([
             'success' => true,

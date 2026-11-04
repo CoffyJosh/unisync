@@ -1,4 +1,3 @@
-
 <?php
 
 require_once __DIR__ . '/../php/app/organization/get_organization.php';
@@ -25,6 +24,10 @@ foreach ($words as $word) {
 
 $initials = substr($initials, 0, 3);
 
+$membershipLabel = $isMember
+    ? ucfirst(strtolower($membership['role']))
+    : 'Guest';
+
 ?>
 
 <!DOCTYPE html>
@@ -38,6 +41,7 @@ $initials = substr($initials, 0, 3);
 
     <script src="../javascript/tailwind.js"></script>
     <script src="../javascript/jquery.js"></script>
+    <script src="../javascript/app/organization.js"></script>
 </head>
 
 <body class="min-h-screen flex flex-col bg-slate-50 text-slate-800">
@@ -47,10 +51,10 @@ $initials = substr($initials, 0, 3);
     <main class="flex-1 w-full max-w-6xl mx-auto px-5 sm:px-8 py-8">
 
         <!-- Back Navigation -->
-        <a href="browse.php"
+        <a href="javascript:history.back()"
            class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-blue-900 mb-6">
             <span>&larr;</span>
-            Back to Organizations
+            Back
         </a>
 
         <!-- Organization Hero -->
@@ -74,7 +78,7 @@ $initials = substr($initials, 0, 3);
                     <div class="flex flex-wrap items-center gap-3 mb-3">
 
                         <span class="text-xs font-bold uppercase tracking-widest text-blue-200">
-                            University Organization
+                            <?= e($organization['university_name']) ?>
                         </span>
 
                         <span class="px-3 py-1 rounded-full text-xs font-bold uppercase <?= $statusClass ?>">
@@ -93,15 +97,16 @@ $initials = substr($initials, 0, 3);
 
                 </div>
 
-                <!-- Management Action -->
+                <!-- Organization Management Action -->
                 <?php if ($canManageEvents): ?>
-                    <div class="relative">
-                        <a href="create_event.php?organization_id=<?= (int) $organizationId ?>"
-                           class="inline-flex items-center justify-center gap-2 bg-white text-[#142C4C] hover:bg-blue-50 font-bold px-5 py-3 rounded-xl transition">
-                            <span>+</span>
-                            Create Event
-                        </a>
-                    </div>
+                    <button
+                        type="button"
+                        id="openEditOrganization"
+                        class="inline-flex items-center justify-center gap-2 bg-white text-[#142C4C] hover:bg-blue-50 font-bold px-5 py-3 rounded-xl transition"
+                    >
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        Edit Organization
+                    </button>
                 <?php endif; ?>
 
             </div>
@@ -135,23 +140,21 @@ $initials = substr($initials, 0, 3);
                 </p>
             </div>
 
+            <!-- User Membership -->
             <div class="bg-white border border-slate-200 rounded-2xl p-5">
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-400">
                     Your Membership
                 </p>
 
                 <p class="text-2xl font-extrabold mt-2 <?= $isMember ? 'text-emerald-600' : 'text-slate-500' ?>">
-                    <?= $isMember ? 'Member' : 'Visitor' ?>
+                    <?= e($membershipLabel) ?>
                 </p>
 
                 <p class="text-xs text-slate-400 mt-1">
-                    <?php if ($isMember): ?>
-                        <?= e($membership['role']) ?>
-                    <?php elseif ($studentId === null): ?>
-                        Log in to check your membership
-                    <?php else: ?>
-                        You are not a member of this organization
-                    <?php endif; ?>
+                    <?= $isMember
+                        ? 'Your role in this organization'
+                        : 'You are not a member of this organization'
+                    ?>
                 </p>
             </div>
 
@@ -193,6 +196,7 @@ $initials = substr($initials, 0, 3);
                     <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-7">
 
                         <div class="flex items-center gap-3 mb-5">
+
                             <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-900 flex items-center justify-center font-bold">
                                 i
                             </div>
@@ -205,6 +209,7 @@ $initials = substr($initials, 0, 3);
                                     Get to know this organization
                                 </p>
                             </div>
+
                         </div>
 
                         <div class="text-sm leading-7 text-slate-600 whitespace-pre-line">
@@ -275,6 +280,7 @@ $initials = substr($initials, 0, 3);
             <!-- EVENTS TAB -->
             <div id="tab-events" class="org-panel hidden py-8">
 
+                <!-- Events Heading and Create Button -->
                 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
 
                     <div>
@@ -286,95 +292,134 @@ $initials = substr($initials, 0, 3);
                         </p>
                     </div>
 
-                    <p class="text-sm font-semibold text-slate-400">
-                        <?= count($events) ?> total events
-                    </p>
-
-                </div>
-
-                <?php if (!empty($events)): ?>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                        <?php foreach ($events as $event): ?>
-
-                            <?php
-                            $eventStatus = strtolower($event['status']);
-
-                            $eventStatusClass = [
-                                'confirmed' => 'bg-emerald-100 text-emerald-700',
-                                'pending' => 'bg-amber-100 text-amber-700',
-                                'cancelled' => 'bg-red-100 text-red-700',
-                                'completed' => 'bg-slate-100 text-slate-600'
-                            ][$eventStatus] ?? 'bg-slate-100 text-slate-600';
-                            ?>
-
-                            <article class="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md transition">
-
-                                <div class="flex items-start justify-between gap-3 mb-4">
-
-                                    <h3 class="text-lg font-bold text-slate-900">
-                                        <?= e($event['event_name']) ?>
-                                    </h3>
-
-                                    <span class="shrink-0 px-3 py-1 rounded-full text-xs font-bold uppercase <?= $eventStatusClass ?>">
-                                        <?= e($event['status']) ?>
-                                    </span>
-
-                                </div>
-
-                                <p class="text-sm text-slate-500 leading-6 mb-5">
-                                    <?= e($event['description'] ?: 'No event description available.') ?>
-                                </p>
-
-                                <div class="border-t border-slate-100 pt-4 mb-5">
-
-                                    <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                                        Schedule
-                                    </p>
-
-                                    <p class="text-sm text-slate-600 whitespace-pre-line leading-6">
-                                        <?= e($event['schedules'] ?: 'No schedule assigned yet.') ?>
-                                    </p>
-
-                                </div>
-
-                                <a href="event.php?id=<?= (int) $event['event_id'] ?>"
-                                   class="inline-flex items-center gap-2 text-sm font-bold text-[#1E3A5F] hover:text-blue-700">
-                                    View Event Details
-                                    <span>&rarr;</span>
-                                </a>
-
-                            </article>
-
-                        <?php endforeach; ?>
-
-                    </div>
-
-                <?php else: ?>
-
-                    <div class="bg-white border border-slate-200 rounded-2xl p-12 text-center">
-
-                        <div class="text-4xl mb-4">📅</div>
-
-                        <h3 class="text-lg font-bold text-slate-800">
-                            No Events Yet
-                        </h3>
-
-                        <p class="text-sm text-slate-500 mt-2">
-                            This organization hasn't scheduled any events.
-                        </p>
+                    <div class="flex items-center gap-3">
 
                         <?php if ($canManageEvents): ?>
                             <a href="create_event.php?organization_id=<?= (int) $organizationId ?>"
-                               class="inline-block mt-5 bg-[#1E3A5F] hover:bg-[#294D78] text-white font-semibold px-5 py-3 rounded-xl">
-                                Create First Event
+                               class="inline-flex items-center gap-2 bg-[#1E3A5F] hover:bg-[#294D78] text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+                                <span>+</span>
+                                Create Event
                             </a>
                         <?php endif; ?>
 
                     </div>
 
-                <?php endif; ?>
+                </div>
+
+                <!-- Persistent Events Container -->
+                <div class="bg-white border border-slate-200 rounded-2xl p-6">
+
+                    <?php if (!empty($events)): ?>
+
+                        <!-- Event Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                            <?php foreach ($events as $event): ?>
+
+                                <?php
+                                $eventStatus = strtolower($event['status']);
+
+                                $eventStatusClass = [
+                                    'confirmed' => 'bg-emerald-100 text-emerald-700',
+                                    'pending' => 'bg-amber-100 text-amber-700',
+                                    'cancelled' => 'bg-red-100 text-red-700',
+                                    'completed' => 'bg-slate-100 text-slate-600'
+                                ][$eventStatus] ?? 'bg-slate-100 text-slate-600';
+                                ?>
+
+                                <article class="border border-slate-200 rounded-2xl overflow-hidden hover:shadow-md transition">
+
+                                    <div class="p-5">
+
+                                        <!-- Organization and Status -->
+                                        <div class="flex items-start justify-between gap-3 mb-3">
+
+                                            <span class="text-xs font-semibold text-[#1E3A5F] bg-blue-50 px-3 py-1 rounded-full max-w-[65%] truncate">
+                                                <?= e($organizationName) ?>
+                                            </span>
+
+                                            <span class="text-xs font-medium px-2.5 py-1 rounded-full <?= $eventStatusClass ?>">
+                                                <?= e(ucfirst($eventStatus)) ?>
+                                            </span>
+
+                                        </div>
+
+                                        <!-- Event Name -->
+                                        <h3 class="text-lg font-bold text-slate-800 mb-2 line-clamp-2">
+                                            <?= e($event['event_name']) ?>
+                                        </h3>
+
+                                        <!-- Description -->
+                                        <p class="text-sm text-slate-500 mb-5 line-clamp-2 min-h-[2.5rem]">
+                                            <?= e($event['description'] ?: 'No description available.') ?>
+                                        </p>
+
+                                        <!-- Schedule -->
+                                        <div class="space-y-2 text-sm text-slate-600 mb-5">
+
+                                            <div class="flex items-start gap-2">
+                                                <i class="fa-regular fa-calendar text-[#D4A64A] w-4 mt-0.5"></i>
+
+                                                <span class="whitespace-pre-line">
+                                                    <?= e($event['schedules'] ?: 'No schedule assigned yet.') ?>
+                                                </span>
+                                            </div>
+
+                                        </div>
+
+                                        <!-- Actions -->
+                                        <div class="flex gap-2">
+
+                                            <a href="event.php?id=<?= (int) $event['event_id'] ?>"
+                                               class="flex-1 text-center bg-[#1E3A5F] hover:bg-[#152c49] text-white text-sm font-semibold py-3 rounded-lg transition-colors">
+                                                View
+                                            </a>
+
+                                            <?php if ($canManageEvents): ?>
+                                                <a href="edit_event.php?id=<?= (int) $event['event_id'] ?>"
+                                                   class="flex-1 text-center border border-[#1E3A5F] text-[#1E3A5F] hover:bg-blue-50 text-sm font-semibold py-3 rounded-lg transition-colors">
+                                                    <i class="fa-solid fa-pen-to-square mr-1"></i>
+                                                    Edit
+                                                </a>
+                                            <?php endif; ?>
+
+                                        </div>
+
+                                    </div>
+
+                                </article>
+
+                            <?php endforeach; ?>
+
+                        </div>
+
+                    <?php else: ?>
+
+                        <!-- Empty State Inside the Same Container -->
+                        <div class="py-6 text-center">
+
+                            <div class="text-4xl mb-4">📅</div>
+
+                            <h3 class="text-lg font-bold text-slate-800">
+                                No Events Yet
+                            </h3>
+
+                            <p class="text-sm text-slate-500 mt-2">
+                                This organization hasn't scheduled any events.
+                            </p>
+
+                            <?php if ($canManageEvents): ?>
+                                <a href="create_event.php?organization_id=<?= (int) $organizationId ?>"
+                                   class="inline-block mt-5 bg-[#1E3A5F] hover:bg-[#294D78] text-white font-semibold px-5 py-3 rounded-xl">
+                                    Create First Event
+                                </a>
+                            <?php endif; ?>
+
+                        </div>
+
+                    <?php endif; ?>
+
+                </div>
 
             </div>
 
@@ -401,17 +446,17 @@ $initials = substr($initials, 0, 3);
                                 <div class="flex items-center gap-4 p-5 border-b border-slate-100">
 
                                     <div class="w-12 h-12 shrink-0 rounded-full bg-blue-50 text-[#1E3A5F] flex items-center justify-center font-bold">
-                                        <?= e(strtoupper(substr($member['student_name'], 0, 1))) ?>
+                                        <?= e(strtoupper(substr($member['account_name'], 0, 1))) ?>
                                     </div>
 
                                     <div class="flex-1 min-w-0">
 
                                         <p class="font-bold text-slate-800 truncate">
-                                            <?= e($member['student_name']) ?>
+                                            <?= e($member['account_name']) ?>
 
                                             <?php if (
-                                                $studentId !== null &&
-                                                (string) $member['student_id'] === (string) $studentId
+                                                $accountId !== null &&
+                                                (string) $member['account_id'] === (string) $accountId
                                             ): ?>
                                                 <span class="text-xs text-blue-700 font-medium">
                                                     (You)
@@ -465,32 +510,157 @@ $initials = substr($initials, 0, 3);
 
     </main>
 
+    <?php if ($canManageEvents): ?>
+        <!-- Edit Organization Modal -->
+        <div id="editOrganizationModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+            <div class="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-xl">
+
+                <div class="flex items-center justify-between p-6 border-b border-slate-200">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">
+                            Edit Organization
+                        </h2>
+                        <p class="text-sm text-slate-500 mt-1">
+                            Update your organization's information.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        id="closeEditOrganization"
+                        class="text-slate-400 hover:text-slate-700 text-2xl"
+                    >
+                        &times;
+                    </button>
+                </div>
+
+                <form
+                    action="../php/app/organization/update_organization.php"
+                    method="POST"
+                    class="px-6 pb-6 pt-2 md:px-8 md:pb-8 md:pt-2 space-y-6"
+                >
+                    <input
+                        type="hidden"
+                        name="organization_id"
+                        value="<?= (int) $organizationId ?>"
+                    >
+
+                    <div>
+                        <label for="edit_organization_name"
+                            class="block text-sm font-semibold text-slate-700 mb-2">
+                            Organization Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="edit_organization_name"
+                            name="organization_name"
+                            maxlength="150"
+                            required
+                            value="<?= e($organization['organization_name']) ?>"
+                            class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-100"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="edit_university_name"
+                            class="block text-sm font-semibold text-slate-700 mb-2">
+                            University Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="edit_university_name"
+                            name="university_name"
+                            maxlength="150"
+                            required
+                            value="<?= e($organization['university_name']) ?>"
+                            class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-100"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="edit_description"
+                            class="block text-sm font-semibold text-slate-700 mb-2">
+                            Description
+                            <span class="font-normal text-slate-400">(Optional)</span>
+                        </label>
+
+                        <textarea
+                            id="edit_description"
+                            name="description"
+                            rows="5"
+                            class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-100 resize-y"
+                        ><?= e($organization['description']) ?></textarea>
+                    </div>
+
+                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
+                        <button
+                            type="button"
+                            id="cancelEditOrganization"
+                            class="rounded-xl border border-slate-300 px-6 py-3 font-semibold text-slate-600 hover:bg-slate-50"
+                        >
+                            Cancel
+                        </button>
+
+                        <button
+                            type="submit"
+                            class="rounded-xl bg-[#1E3A5F] px-6 py-3 font-semibold text-white hover:bg-blue-950"
+                        >
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    <?php endif; ?>
+
     <?php include __DIR__ . '/../php/components/footer.php'; ?>
 
+    <!-- Remember the active tab per organization (survives reload / back navigation) -->
     <script>
-        $(document).ready(function () {
+        $(function () {
+            var storageKey = 'unisync_org_tab_<?= (int) $organizationId ?>';
 
-            $('.org-tab').on('click', function () {
+            function readTab() {
+                try { return sessionStorage.getItem(storageKey); } catch (err) { return null; }
+            }
 
-                const selectedTab = $(this).data('tab');
+            function saveTab(tab) {
+                try { sessionStorage.setItem(storageKey, tab); } catch (err) {}
+            }
 
-                // Hide all tab panels.
-                $('.org-panel').addClass('hidden');
-
-                // Show selected panel.
-                $('#tab-' + selectedTab).removeClass('hidden');
-
-                // Reset tab styles.
-                $('.org-tab')
-                    .removeClass('border-[#1E3A5F] text-[#1E3A5F]')
-                    .addClass('border-transparent text-slate-500');
-
-                // Highlight active tab.
-                $(this)
-                    .removeClass('border-transparent text-slate-500')
-                    .addClass('border-[#1E3A5F] text-[#1E3A5F]');
+            // Save whenever a tab is clicked.
+            $(document).on('click', '.org-tab', function () {
+                var tab = $(this).data('tab');
+                if (tab) saveTab(tab);
             });
 
+            // Restore the saved tab on load.
+            var saved = readTab();
+            if (!saved || saved === 'about') return;
+
+            var $btn = $('.org-tab[data-tab="' + saved + '"]');
+            if (!$btn.length) return;
+
+            // Let organization.js handle the switch...
+            $btn.trigger('click');
+
+            // ...and fall back to switching manually if it didn't.
+            var $panel = $('#tab-' + saved);
+            if ($panel.hasClass('hidden')) {
+                $('.org-panel').addClass('hidden');
+                $panel.removeClass('hidden');
+
+                $('.org-tab')
+                    .removeClass('border-[#1E3A5F] text-[#1E3A5F] font-bold')
+                    .addClass('border-transparent text-slate-500 font-semibold');
+
+                $btn
+                    .removeClass('border-transparent text-slate-500 font-semibold')
+                    .addClass('border-[#1E3A5F] text-[#1E3A5F] font-bold');
+            }
         });
     </script>
 

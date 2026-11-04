@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$studentId = $_SESSION['student_id'] ?? null;
+$accountId = $_SESSION['account_id'] ?? null;
 
 $organizationId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 $organizationSlug = $_GET['name'] ?? '';
@@ -27,10 +27,12 @@ $sql = "
     SELECT
         organization_id,
         organization_name,
+        university_name,
         description,
         status
     FROM organization
     WHERE organization_id = :organization_id
+    AND status = 'active'
 ";
 
 $stmt = $pdo->prepare($sql);
@@ -62,59 +64,71 @@ if (!hash_equals($expectedSlug, strtolower(trim($organizationSlug)))) {
     exit('Organization not found.');
 }
 
-// Current student's membership
+// Current account's membership
 $membership = null;
 $role = null;
 
-if ($studentId !== null) {
+if ($accountId !== null) {
     $membershipSql = "
-        SELECT role, membership_date
+        SELECT
+            role,
+            membership_date
         FROM membership
-        WHERE student_id = :student_id
-          AND organization_id = :organization_id
+        WHERE account_id = :account_id
+            AND organization_id = :organization_id
+            AND status = 'active'
     ";
 
     $membershipStmt = $pdo->prepare($membershipSql);
     $membershipStmt->execute([
-        ':student_id' => $studentId,
+        ':account_id' => $accountId,
         ':organization_id' => $organizationId
     ]);
 
     $membership = $membershipStmt->fetch(PDO::FETCH_ASSOC);
 
     if ($membership) {
-        $role = strtolower(trim($membership['role']));
+        $role = trim($membership['role']);
     }
 }
 
-$isMember = $membership !== null && $membership !== false;
+// Membership status
+// Membership status
+$isMember = $membership !== false && $membership !== null;
 
-$isAdmin = $role === 'admin';
+// Normalize role
+$role = $membership
+    ? ucfirst(strtolower(trim($membership['role'])))
+    : null;
+
+// Permissions
+$isAdmin = $role === 'Admin';
 
 $canManageEvents = in_array($role, [
-    'admin',
-    'event manager',
-    'event_manager'
+    'Admin',
+    'Manager'
 ], true);
 
 // Organization members
 $memberSql = "
     SELECT
-        s.student_id,
-        s.student_name,
+        a.account_id,
+        a.account_name,
         m.role,
         m.membership_date
     FROM membership m
-    INNER JOIN student s
-        ON m.student_id = s.student_id
+    INNER JOIN account a
+        ON m.account_id = a.account_id
     WHERE m.organization_id = :organization_id
+        AND m.status = 'active'
+        AND a.account_status = 'active'
     ORDER BY
         CASE
-            WHEN LOWER(m.role) = 'admin' THEN 1
-            WHEN LOWER(m.role) IN ('event manager', 'event_manager') THEN 2
+            WHEN m.role = 'Admin' THEN 1
+            WHEN m.role = 'Manager' THEN 2
             ELSE 3
         END,
-        s.student_name ASC
+        a.account_name ASC
 ";
 
 $memberStmt = $pdo->prepare($memberSql);
@@ -141,6 +155,9 @@ $eventSql = "
             COALESCE(v.venue_name, 'No venue'),
             E'\n'
             ORDER BY es.event_date, es.start_time
+        ) FILTER (
+            WHERE es.status IN ('pending', 'confirmed', 'completed')
+            AND v.status = 'active'
         ) AS schedules
     FROM event e
     LEFT JOIN event_schedule es
@@ -148,6 +165,13 @@ $eventSql = "
     LEFT JOIN venue v
         ON es.venue_id = v.venue_id
     WHERE e.organization_id = :organization_id
+      AND e.status <> 'deleted'
+      AND EXISTS (
+          SELECT 1
+          FROM organization o
+          WHERE o.organization_id = e.organization_id
+            AND o.status = 'active'
+      )
     GROUP BY
         e.event_id,
         e.event_name,

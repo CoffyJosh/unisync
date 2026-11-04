@@ -5,9 +5,9 @@ require_once __DIR__ . '/../../db.php';
 
 header('Content-Type: application/json');
 
-$studentId = $_SESSION['student_id'] ?? null;
+$accountId = $_SESSION['account_id'] ?? null;
 
-if (!$studentId) {
+if (!$accountId) {
     http_response_code(401);
     echo json_encode([
         'success' => false,
@@ -31,12 +31,12 @@ try {
 
     $query = $pdo->prepare(
         'DELETE FROM registration
-         WHERE student_id = :student_id
+         WHERE account_id = :account_id
            AND event_id = :event_id'
     );
 
     $query->execute([
-        ':student_id' => $studentId,
+        ':account_id' => $accountId,
         ':event_id' => $eventId
     ]);
 

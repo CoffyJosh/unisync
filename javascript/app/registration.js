@@ -72,7 +72,8 @@ $(document).ready(function () {
 
         // Send registration request through AJAX.
         $.ajax({
-            url: 'registration.php',
+            // Post back to the current page, including its mounted app path.
+            url: window.location.pathname + window.location.search,
             type: 'POST',
             data: $form.serialize() + '&ajax=1',
             dataType: 'json',
@@ -112,11 +113,13 @@ $(document).ready(function () {
 
                 $button.prop('disabled', false);
 
-                let message = 'Unable to connect to the server. Please try again.';
-
                 if (xhr.responseJSON && xhr.responseJSON.errors) {
                     displayErrors(xhr.responseJSON.errors);
                 } else {
+                    const message = xhr.status === 0
+                        ? 'Could not reach the server. Check that the local web server is running and try again.'
+                        : 'The server could not complete registration (HTTP ' + xhr.status + '). Please try again.';
+
                     $('#generalError')
                         .removeClass('hidden')
                         .text(message);
