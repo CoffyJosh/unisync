@@ -81,13 +81,7 @@ $authButtonLink = ($currentPage === 'login.php') ? 'registration.php' : 'login.p
                     <details class="relative group">
 
                         <summary class="flex items-center gap-2 cursor-pointer list-none text-[#1E3A5F] hover:text-blue-700 transition-colors">
-
-                            <span class="w-9 h-9 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
-                                <i class="fa-solid fa-user text-[#1E3A5F]"></i>
-                            </span>
-
                             Account
-
                             <i class="fa-solid fa-chevron-down text-xs transition-transform group-open:rotate-180"></i>
 
                         </summary>
@@ -112,7 +106,7 @@ $authButtonLink = ($currentPage === 'login.php') ? 'registration.php' : 'login.p
 
                             <div class="border-t border-slate-100 my-1"></div>
 
-                            <a href="../php/process/logout.php"
+                            <a href="../php/app/auth/logout.php"
                                class="flex items-center gap-3 px-4 py-3 rounded-lg text-red-500 hover:bg-red-50 transition-colors">
 
                                 <i class="fa-solid fa-right-from-bracket w-4"></i>

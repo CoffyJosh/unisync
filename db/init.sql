@@ -25,9 +25,10 @@ CREATE TABLE STUDENT (
 
 -- 2. ORGANIZATION
 CREATE TABLE ORGANIZATION (
-    organization_id   SERIAL PRIMARY KEY,
-    organization_name VARCHAR(150) NOT NULL UNIQUE,
-    status            VARCHAR(30) NOT NULL DEFAULT 'active'
+    organization_id     SERIAL PRIMARY KEY,
+    organization_name   VARCHAR(150) NOT NULL UNIQUE,
+    description         TEXT,
+    status              VARCHAR(30) NOT NULL DEFAULT 'active'
 );
 
 -- 3. MEMBERSHIP

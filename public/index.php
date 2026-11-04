@@ -1,51 +1,11 @@
 
 <?php
-require_once '../php/db.php';
-
-// Retrieve up to six upcoming confirmed events.
-$sql = "
-    SELECT
-        e.event_id,
-        e.event_name,
-        e.description,
-        e.status,
-        o.organization_name,
-        v.venue_name,
-        v.location AS venue_location,
-        es.event_date,
-        es.start_time,
-        es.end_time
-    FROM event e
-    INNER JOIN organization o
-        ON e.organization_id = o.organization_id
-    INNER JOIN event_schedule es
-        ON e.event_id = es.event_id
-    INNER JOIN venue v
-        ON es.venue_id = v.venue_id
-    WHERE e.status = 'confirmed'
-      AND es.event_date >= CURRENT_DATE
-    ORDER BY es.event_date ASC, es.start_time ASC
-    LIMIT 6
-";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute();
-$events = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Format event date and time.
-function formatEventDate($date) {
-    return date('F j, Y', strtotime($date));
-}
-
-function formatEventTime($start, $end) {
-    return date('g:i A', strtotime($start))
-        . ' - ' .
-        date('g:i A', strtotime($end));
-}
+require_once __DIR__ . '/../php/app/home/get_featured_events.php';
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -58,7 +18,7 @@ function formatEventTime($start, $end) {
 
 <body class="min-h-screen flex flex-col bg-slate-50 text-slate-800">
 
-    <?php include '../php/components/navbar.php'; ?>
+    <?php include __DIR__ . '/../php/components/navbar.php'; ?>
 
     <main class="flex-1">
 
@@ -103,7 +63,6 @@ function formatEventTime($start, $end) {
             </div>
         </section>
 
-
         <!-- Featured Events -->
         <section class="py-20 px-6">
             <div class="max-w-7xl mx-auto">
@@ -131,7 +90,6 @@ function formatEventTime($start, $end) {
 
                 </div>
 
-
                 <?php if (count($events) > 0): ?>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -149,16 +107,16 @@ function formatEventTime($start, $end) {
                                     </span>
 
                                     <h3 class="text-xl font-bold text-slate-900 mb-2">
-                                        <?= htmlspecialchars($event['event_name']) ?>
+                                        <?= htmlspecialchars($event['event_name'], ENT_QUOTES, 'UTF-8') ?>
                                     </h3>
 
                                     <p class="text-sm text-slate-500 mb-4">
                                         Organized by
-                                        <?= htmlspecialchars($event['organization_name']) ?>
+                                        <?= htmlspecialchars($event['organization_name'], ENT_QUOTES, 'UTF-8') ?>
                                     </p>
 
                                     <p class="text-slate-600 text-sm leading-relaxed mb-6">
-                                        <?= htmlspecialchars($event['description']) ?>
+                                        <?= htmlspecialchars($event['description'] ?? '', ENT_QUOTES, 'UTF-8') ?>
                                     </p>
 
                                     <div class="space-y-3 text-sm text-slate-600">
@@ -166,7 +124,7 @@ function formatEventTime($start, $end) {
                                         <div class="flex items-start gap-3">
                                             <span class="text-blue-900">&#128197;</span>
                                             <span>
-                                                <?= htmlspecialchars(formatEventDate($event['event_date'])) ?>
+                                                <?= htmlspecialchars(formatEventDate($event['event_date']), ENT_QUOTES, 'UTF-8') ?>
                                             </span>
                                         </div>
 
@@ -176,15 +134,15 @@ function formatEventTime($start, $end) {
                                                 <?= htmlspecialchars(formatEventTime(
                                                     $event['start_time'],
                                                     $event['end_time']
-                                                )) ?>
+                                                ), ENT_QUOTES, 'UTF-8') ?>
                                             </span>
                                         </div>
 
                                         <div class="flex items-start gap-3">
                                             <span class="text-blue-900">&#128205;</span>
                                             <span>
-                                                <?= htmlspecialchars($event['venue_name']) ?>,
-                                                <?= htmlspecialchars($event['venue_location']) ?>
+                                                <?= htmlspecialchars($event['venue_name'], ENT_QUOTES, 'UTF-8') ?>,
+                                                <?= htmlspecialchars($event['venue_location'], ENT_QUOTES, 'UTF-8') ?>
                                             </span>
                                         </div>
 
@@ -227,9 +185,8 @@ function formatEventTime($start, $end) {
             </div>
         </section>
 
-
         <!-- About Section -->
-        <section id="about" class="bg-white py-20 px-6">
+        <section id="about" class="bg-white py-20 px-6 scroll-mt-24">
 
             <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
 
@@ -285,10 +242,10 @@ function formatEventTime($start, $end) {
 
                             <div>
                                 <h4 class="font-semibold text-slate-900">
-                                    Connect with Organizations
+                                    View Event Information
                                 </h4>
                                 <p class="text-sm text-slate-600 mt-1">
-                                    Explore the organizations behind campus events.
+                                    Check event schedules, venues, and descriptions.
                                 </p>
                             </div>
                         </div>
@@ -316,7 +273,6 @@ function formatEventTime($start, $end) {
 
         </section>
 
-
         <!-- Call to Action -->
         <section class="bg-blue-900 py-16 px-6">
 
@@ -342,7 +298,8 @@ function formatEventTime($start, $end) {
 
     </main>
 
-    <?php include '../php/components/footer.php'; ?>
+    <?php include __DIR__ . '/../php/components/footer.php'; ?>
 
 </body>
 </html>
+                    
