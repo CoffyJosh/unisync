@@ -327,9 +327,9 @@ $membershipLabel = $isMember
                                 ][$eventStatus] ?? 'bg-slate-100 text-slate-600';
                                 ?>
 
-                                <article class="border border-slate-200 rounded-2xl overflow-hidden hover:shadow-md transition">
+                                <article class="flex flex-col h-full border border-slate-200 rounded-2xl overflow-hidden hover:shadow-md transition">
 
-                                    <div class="p-5">
+                                    <div class="p-5 flex flex-col flex-1">
 
                                         <!-- Organization and Status -->
                                         <div class="flex items-start justify-between gap-3 mb-3">
@@ -344,44 +344,44 @@ $membershipLabel = $isMember
 
                                         </div>
 
-                                        <!-- Event Name -->
+                                        <!-- Event Name (up to 2 lines) -->
                                         <h3 class="text-lg font-bold text-slate-800 mb-2 line-clamp-2">
                                             <?= e($event['event_name']) ?>
                                         </h3>
 
-                                        <!-- Description -->
-                                        <p class="text-sm text-slate-500 mb-5 line-clamp-2 min-h-[2.5rem]">
+                                        <!-- Description (up to 2 lines) -->
+                                        <p class="text-sm text-slate-500 line-clamp-2">
                                             <?= e($event['description'] ?: 'No description available.') ?>
                                         </p>
 
-                                        <!-- Schedule -->
-                                        <div class="space-y-2 text-sm text-slate-600 mb-5">
+                                        <!-- Schedule and actions, pushed to the bottom of the card -->
+                                        <div class="mt-auto pt-4">
 
-                                            <div class="flex items-start gap-2">
+                                            <div class="flex items-start gap-2 text-sm text-slate-600 mb-4">
                                                 <i class="fa-regular fa-calendar text-[#D4A64A] w-4 mt-0.5"></i>
 
-                                                <span class="whitespace-pre-line">
+                                                <span class="whitespace-pre-line line-clamp-3">
                                                     <?= e($event['schedules'] ?: 'No schedule assigned yet.') ?>
                                                 </span>
                                             </div>
 
-                                        </div>
+                                            <!-- Actions -->
+                                            <div class="flex gap-2">
 
-                                        <!-- Actions -->
-                                        <div class="flex gap-2">
-
-                                            <a href="event.php?id=<?= (int) $event['event_id'] ?>"
-                                               class="flex-1 text-center bg-[#1E3A5F] hover:bg-[#152c49] text-white text-sm font-semibold py-3 rounded-lg transition-colors">
-                                                View
-                                            </a>
-
-                                            <?php if ($canManageEvents): ?>
-                                                <a href="edit_event.php?id=<?= (int) $event['event_id'] ?>"
-                                                   class="flex-1 text-center border border-[#1E3A5F] text-[#1E3A5F] hover:bg-blue-50 text-sm font-semibold py-3 rounded-lg transition-colors">
-                                                    <i class="fa-solid fa-pen-to-square mr-1"></i>
-                                                    Edit
+                                                <a href="event.php?id=<?= (int) $event['event_id'] ?>"
+                                                class="flex-1 text-center bg-[#1E3A5F] hover:bg-[#152c49] text-white text-sm font-semibold py-3 rounded-lg transition-colors">
+                                                    View
                                                 </a>
-                                            <?php endif; ?>
+
+                                                <?php if ($canManageEvents): ?>
+                                                    <a href="edit_event.php?id=<?= (int) $event['event_id'] ?>"
+                                                    class="flex-1 text-center border border-[#1E3A5F] text-[#1E3A5F] hover:bg-blue-50 text-sm font-semibold py-3 rounded-lg transition-colors">
+                                                        <i class="fa-solid fa-pen-to-square mr-1"></i>
+                                                        Edit
+                                                    </a>
+                                                <?php endif; ?>
+
+                                            </div>
 
                                         </div>
 

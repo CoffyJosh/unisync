@@ -56,6 +56,17 @@ if (!$organization) {
     http_response_code(404);
     exit('Organization not found.');
 }
+
+// Organization page URL (same format used by the browse page).
+$organizationSlug = strtolower(trim(
+    preg_replace('/[^a-z0-9]+/i', '-', $organization['organization_name']),
+    '-'
+));
+
+$organizationPageUrl = 'organization.php?id='
+    . urlencode((string) $organizationId)
+    . '&name='
+    . urlencode($organizationSlug);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -83,7 +94,7 @@ if (!$organization) {
       id="createEventPage"
       data-organization-id="<?= (int)$organizationId ?>">
     <div class="mb-7">
-        <a href="organization.php?organization_id=<?= (int)$organizationId ?>"
+        <a href="<?= htmlspecialchars($organizationPageUrl, ENT_QUOTES, 'UTF-8') ?>"
            class="text-sm font-semibold text-slate-500 hover:text-[#1E3A5F]">
             <i class="fa-solid fa-arrow-left mr-2"></i>Back to organization
         </a>
@@ -91,7 +102,7 @@ if (!$organization) {
         <p class="text-slate-500 mt-1">Publishing for <?= htmlspecialchars($organization['organization_name'], ENT_QUOTES, 'UTF-8') ?></p>
     </div>
 
-    <form id="eventForm" enctype="multipart/form-data" novalidate>
+    <form id="eventForm" enctype="multipart/form-data" novalidate autocomplete="off">
         <input type="hidden" name="organization_id" value="<?= (int)$organizationId ?>">
 
         <section class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 mb-7">
@@ -128,7 +139,7 @@ if (!$organization) {
             </div>
         </section>
 
-        <section class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+        <section id="eventSchedulesSection" class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                 <div>
                     <h2 class="text-xl font-bold text-slate-800">Event Schedules</h2>
@@ -136,6 +147,8 @@ if (!$organization) {
                 </div>
                 <span id="scheduleCount" class="text-xs font-semibold rounded-full bg-slate-100 text-slate-600 px-3 py-2">0 schedules</span>
             </div>
+
+            <div id="scheduleNotice" class="hidden mb-5 rounded-xl p-3 text-sm" role="status"></div>
 
             <div class="grid grid-cols-1 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,2fr)] gap-6">
                 <div class="border border-slate-200 rounded-xl p-4">
@@ -155,7 +168,15 @@ if (!$organization) {
                     </div>
                 </div>
 
-                <div class="border border-slate-200 rounded-xl p-5 min-w-0">
+                <!-- Shown while no schedule form is open -->
+                <div id="scheduleFormPlaceholder"
+                     class="border border-dashed border-slate-300 rounded-xl p-5 min-w-0 flex flex-col items-center justify-center text-center text-slate-400 min-h-[240px]">
+                    <i class="fa-regular fa-calendar-plus text-3xl mb-3"></i>
+                    <p class="text-sm">Click <span class="font-semibold text-slate-600">Add Schedule</span> or select a schedule to edit it.</p>
+                </div>
+
+                <!-- Schedule form (hidden until Add Schedule / a schedule is clicked) -->
+                <div id="scheduleFormPanel" class="hidden border border-slate-200 rounded-xl p-5 min-w-0">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-5">
                         <div>
                             <h3 id="scheduleFormTitle" class="font-bold text-slate-800 text-lg">Add a Schedule</h3>
@@ -209,7 +230,13 @@ if (!$organization) {
                         </div>
                     </div>
 
+                    <div id="scheduleFormError" class="hidden mt-4 rounded-xl bg-red-50 text-red-700 p-3 text-sm" role="alert"></div>
+
                     <div class="flex flex-wrap justify-end gap-3 mt-6">
+                        <button type="button" id="cancelScheduleForm"
+                                class="rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-100">
+                            Cancel
+                        </button>
                         <button type="button" id="removeCurrentSchedule"
                                 class="hidden rounded-xl border border-red-200 px-5 py-3 text-sm font-semibold text-red-600 hover:bg-red-50">
                             Remove Schedule
@@ -226,7 +253,7 @@ if (!$organization) {
         <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-7">
             <p class="text-sm text-slate-500">Your event will be published as confirmed. You can add schedules now or later.</p>
             <div class="flex gap-3">
-                <a href="organization.php?organization_id=<?= (int)$organizationId ?>"
+                <a href="<?= htmlspecialchars($organizationPageUrl, ENT_QUOTES, 'UTF-8') ?>"
                    class="rounded-xl border border-slate-300 px-6 py-3 font-semibold text-slate-600 hover:bg-slate-100">Cancel</a>
                 <button type="submit" id="publishEvent"
                         class="rounded-xl bg-[#1E3A5F] px-7 py-3 font-semibold text-white hover:bg-[#294D78]">

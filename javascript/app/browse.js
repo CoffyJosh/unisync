@@ -27,6 +27,8 @@ $(document).ready(function () {
             organization_id: $('#organization_id').val(),
             status: $('#status').val(),
             sort: $('#sort').val(),
+            university: $('#university').val(),
+            org_sort: $('#org_sort').val(),
             page: page
         };
     }
@@ -124,10 +126,16 @@ $(document).ready(function () {
 
         $('#view').val(view);
 
-        // The organization filter only applies to the events view.
-        if (view === 'organizations') {
-            $('#organization_id').val('');
-        }
+        // Every tab switch starts from the defaults.
+        $('#status').val('all');
+        $('#sort').val('nearest');
+        $('#organization_id').val('');
+        $('#university').val('');
+        $('#org_sort').val('name_asc');
+
+        // Show only the filters that belong to this tab.
+        $('#eventFilters').toggleClass('hidden', view !== 'events');
+        $('#orgFilters').toggleClass('hidden', view !== 'organizations');
 
         setActiveTab(view);
         updateResults(1);
@@ -152,8 +160,8 @@ $(document).ready(function () {
         e.preventDefault();
     });
 
-    // Status and sorting
-    $('#status, #sort').on('change', function () {
+    // Event filters and organization filters
+    $('#status, #sort, #university, #org_sort').on('change', function () {
         updateResults(1);
     });
 
@@ -163,6 +171,9 @@ $(document).ready(function () {
 
         $('#organization_id').val($(this).data('org-id'));
         $('#view').val('events');
+
+        $('#eventFilters').removeClass('hidden');
+        $('#orgFilters').addClass('hidden');
 
         setActiveTab('events');
         updateResults(1);

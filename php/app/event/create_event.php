@@ -9,6 +9,15 @@ function createEventResponse($success, $message, $data = []) {
     exit;
 }
 
+// Path of an uploaded image, so it can be removed if publishing fails.
+$savedImageFile = null;
+
+function removeSavedImage($path) {
+    if ($path && is_file($path)) {
+        @unlink($path);
+    }
+}
+
 try {
     require_once __DIR__ . '/../../db.php';
     $pdo = $pdo ?? $conn ?? $db ?? null;
@@ -84,11 +93,31 @@ try {
         if (!move_uploaded_file($image['tmp_name'], $uploadDirectory . '/' . $filename)) {
             throw new RuntimeException('Unable to save uploaded event image.');
         }
+        $savedImageFile = $uploadDirectory . '/' . $filename;
         $imagePath = 'uploads/events/' . $filename;
     }
 
-    // Events are published as confirmed. Pending is reserved for the future approval workflow.
-    $eventStatus = 'confirmed';
+    // pending = no schedules, completed = every schedule already ended, otherwise confirmed.
+    $eventStatus = 'pending';
+
+    if (count($schedules) > 0) {
+        $eventStatus = 'completed';
+        $timezone = new DateTimeZone('Asia/Manila');
+        $nowManila = new DateTimeImmutable('now', $timezone);
+
+        foreach ($schedules as $scheduleCheck) {
+            $endAt = DateTimeImmutable::createFromFormat(
+                'Y-m-d H:i',
+                ($scheduleCheck['event_date'] ?? '') . ' ' . ($scheduleCheck['end_time'] ?? ''),
+                $timezone
+            );
+
+            if ($endAt === false || $endAt > $nowManila) {
+                $eventStatus = 'confirmed';
+                break;
+            }
+        }
+    }
 
     $pdo->beginTransaction();
 
@@ -106,6 +135,18 @@ try {
     ]);
     $eventId = (int)$eventInsert->fetchColumn();
 
+    // Venue names are not unique. Reuse this account's venue only when the
+    // same name is already pinned at the same spot; otherwise create a new one.
+    $venueLookup = $pdo->prepare("
+        SELECT venue_id
+        FROM VENUE
+        WHERE account_id = :account_id
+          AND venue_name = :venue_name
+          AND status = 'active'
+          AND ABS(latitude - CAST(:latitude AS NUMERIC)) < 0.0005
+          AND ABS(longitude - CAST(:longitude AS NUMERIC)) < 0.0005
+        LIMIT 1
+    ");
     $venueInsert = $pdo->prepare("
         INSERT INTO VENUE (account_id, venue_name, location, capacity, latitude, longitude, status)
         VALUES (:account_id, :venue_name, :location, :capacity, :latitude, :longitude, 'active')
@@ -115,6 +156,8 @@ try {
         INSERT INTO EVENT_SCHEDULE (event_id, venue_id, event_date, start_time, end_time, status)
         VALUES (:event_id, :venue_id, :event_date, :start_time, :end_time, 'confirmed')
     ");
+
+    $venueCache = [];
 
     foreach ($schedules as $index => $schedule) {
         $venueName = trim($schedule['venue_name'] ?? '');
@@ -141,15 +184,40 @@ try {
             throw new InvalidArgumentException('Schedule ' . ($index + 1) . ' has missing or invalid information.');
         }
 
-        $venueInsert->execute([
-            ':account_id' => $accountId,
-            ':venue_name' => $venueName,
-            ':location' => $location,
-            ':capacity' => $capacity,
-            ':latitude' => $latitude,
-            ':longitude' => $longitude
-        ]);
-        $venueId = (int)$venueInsert->fetchColumn();
+        $venueKey = $venueName . '|' . round($latitude, 4) . '|' . round($longitude, 4);
+
+        if (isset($venueCache[$venueKey])) {
+
+            $venueId = $venueCache[$venueKey];
+
+        } else {
+
+            $venueLookup->execute([
+                ':account_id' => $accountId,
+                ':venue_name' => $venueName,
+                ':latitude' => $latitude,
+                ':longitude' => $longitude
+            ]);
+
+            $venueId = $venueLookup->fetchColumn();
+
+            if ($venueId === false) {
+
+                $venueInsert->execute([
+                    ':account_id' => $accountId,
+                    ':venue_name' => $venueName,
+                    ':location' => $location,
+                    ':capacity' => $capacity,
+                    ':latitude' => $latitude,
+                    ':longitude' => $longitude
+                ]);
+
+                $venueId = $venueInsert->fetchColumn();
+            }
+
+            $venueId = (int) $venueId;
+            $venueCache[$venueKey] = $venueId;
+        }
 
         $scheduleInsert->execute([
             ':event_id' => $eventId,
@@ -160,11 +228,16 @@ try {
         ]);
     }
 
+    // The CASTs are required: PostgreSQL cannot infer the type of a bare
+    // parameter in a SELECT list ("indeterminate datatype").
     $notificationMessage = 'A new event has been created: ' . $eventName;
     $notificationInsert = $pdo->prepare("
         INSERT INTO NOTIFICATION
             (account_id, organization_id, event_id, notification_message)
-        SELECT m.account_id, :organization_id, :event_id, :message
+        SELECT m.account_id,
+               CAST(:organization_id AS INTEGER),
+               CAST(:event_id AS INTEGER),
+               CAST(:message AS TEXT)
         FROM MEMBERSHIP m
         WHERE m.organization_id = :membership_organization_id
           AND m.status = 'active'
@@ -189,12 +262,14 @@ try {
     if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    removeSavedImage($savedImageFile);
     http_response_code(422);
     createEventResponse(false, $e->getMessage());
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    removeSavedImage($savedImageFile);
     error_log('create_event.php: ' . $e->getMessage());
     http_response_code(500);
     createEventResponse(false, 'The event could not be published. No database changes were committed.');

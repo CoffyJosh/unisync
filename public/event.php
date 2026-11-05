@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 
@@ -13,6 +12,16 @@ $eventStatus = strtolower((string) ($event['status'] ?? ''));
 $eventName = $event['event_name'] ?? 'Event';
 $eventDescription = $event['description'] ?? '';
 $organizationName = $event['organization_name'] ?? 'Organization';
+
+$organizationSlug = strtolower(trim(
+    preg_replace('/[^a-z0-9]+/i', '-', $organizationName),
+    '-'
+));
+
+$organizationPageUrl = 'organization.php?id='
+    . urlencode((string) ($event['organization_id'] ?? ''))
+    . '&name='
+    . urlencode($organizationSlug);
 
 $statusClasses = [
     'pending' => 'bg-yellow-400/10 text-yellow-200 border border-yellow-300/20',
@@ -112,7 +121,7 @@ $publicSchedules = array_values(array_filter(
     <?php include __DIR__ . '/../php/components/navbar.php'; ?>
 
     <main class="flex-1">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-40">
 
             <a href="javascript:history.back()"
                class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 mb-6">
@@ -121,12 +130,12 @@ $publicSchedules = array_values(array_filter(
             </a>
 
             <!-- Event banner -->
-            <section class="event-banner rounded-2xl overflow-hidden mb-8">
+            <section class="event-banner relative rounded-2xl overflow-hidden mb-8">
                 <div class="grid grid-cols-1 md:grid-cols-5">
 
                     <div class="md:col-span-3 p-6 sm:p-8 lg:p-10 flex flex-col justify-center">
                         <p class="text-sm text-blue-100 mb-3">
-                            <?php echo eventEscape($organizationName); ?>
+                            <?php echo eventEscape($event['university_name'] ?? ''); ?>
                         </p>
 
                         <h1 class="text-3xl sm:text-4xl font-bold text-white leading-tight">
@@ -134,10 +143,10 @@ $publicSchedules = array_values(array_filter(
                         </h1>
 
                         <div class="flex flex-wrap items-center gap-3 mt-5">
-                            <span class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm text-white">
-                                <i class="fa-solid fa-calendar-days"></i>
-                                University Event
-                            </span>
+                            <a href="<?php echo eventEscape($organizationPageUrl); ?>" class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20 transition-colors">
+                                <i class="fa-solid fa-building-columns"></i>
+                                <?php echo eventEscape($organizationName); ?>
+                            </a>
 
                             <span class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm <?php echo $statusClass; ?>">
                                 <i class="fa-solid fa-circle-info"></i>
@@ -146,15 +155,15 @@ $publicSchedules = array_values(array_filter(
                         </div>
                     </div>
 
-                    <div class="md:col-span-2 h-[175px] md:h-[230px] overflow-hidden bg-slate-200">
+                    <div class="md:col-span-2 relative min-h-[175px] md:min-h-[230px] overflow-hidden bg-slate-200">
                         <?php if (!empty($eventImage)): ?>
                             <img
                                 src="<?php echo eventEscape($eventImage); ?>"
                                 alt="<?php echo eventEscape($eventName); ?>"
-                                class="w-full h-full object-cover"
+                                class="absolute inset-0 w-full h-full object-cover"
                             >
                         <?php else: ?>
-                            <div class="w-full h-full flex items-center justify-center bg-slate-100">
+                            <div class="absolute inset-0 flex items-center justify-center bg-slate-100">
                                 <div class="text-center text-slate-400">
                                     <i class="fa-regular fa-calendar text-5xl mb-3"></i>
                                     <p class="text-sm">Event image unavailable</p>
@@ -164,7 +173,44 @@ $publicSchedules = array_values(array_filter(
                     </div>
 
                 </div>
+
+                <?php if ($canManageEvent): ?>
+                    <a href="edit_event.php?id=<?php echo (int) $eventId; ?>"
+                    class="absolute bottom-4 right-4 z-10 w-11 h-11 rounded-full bg-white text-[#1E3A5F] shadow-lg flex items-center justify-center hover:bg-blue-50 transition-colors"
+                    title="Edit event"
+                    aria-label="Edit event">
+                        <i class="fa-solid fa-pencil"></i>
+                    </a>
+                <?php endif; ?>
             </section>
+
+            <?php if ($canManageEvent): ?>
+
+                <!-- Admin / Manager tabs -->
+                <div class="flex items-center gap-2 border-b border-slate-200 mb-8 overflow-x-auto" role="tablist">
+
+                    <button type="button"
+                            class="event-tab shrink-0 px-5 py-4 text-sm font-bold border-b-2 border-[#1E3A5F] text-[#1E3A5F]"
+                            data-tab="details"
+                            role="tab"
+                            aria-selected="true">
+                        Details
+                    </button>
+
+                    <button type="button"
+                            class="event-tab shrink-0 px-5 py-4 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-[#1E3A5F]"
+                            data-tab="attendees"
+                            role="tab"
+                            aria-selected="false">
+                        Attendees
+                        <span id="attendeeTabCount" class="ml-1 text-xs text-slate-400">(<?php echo (int) $registeredAttendeeCount; ?>)</span>
+                    </button>
+
+                </div>
+
+                <div id="eventTabDetails">
+
+            <?php endif; ?>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
@@ -474,7 +520,7 @@ $publicSchedules = array_values(array_filter(
                         <?php if (empty($accountId)): ?>
 
                             <a
-                                href="login.php"
+                                href="account_login.php"
                                 class="block w-full text-center bg-[#1E3A5F] text-white font-semibold py-3 rounded-lg hover:bg-[#294D78] transition-colors"
                             >
                                 Log In to Register
@@ -540,6 +586,75 @@ $publicSchedules = array_values(array_filter(
                 </aside>
 
             </div>
+
+            <?php if ($canManageEvent): ?>
+
+                </div><!-- /#eventTabDetails -->
+
+                <!-- Attendees tab (Admin / Manager only) -->
+                <div id="eventTabAttendees" class="min-h-[480px] mb-12 hidden">
+
+                    <section class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8">
+
+                        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-900">
+                                    Attendees
+                                </h2>
+
+                                <p class="text-sm text-slate-500 mt-1">
+                                    <span id="attendeeRegisteredCount"><?php echo (int) $registeredAttendeeCount; ?></span>
+                                    registered for this event.
+                                </p>
+                            </div>
+
+                            <div class="inline-flex rounded-lg border border-slate-200 overflow-hidden self-start" role="group" aria-label="Attendee filter">
+
+                                <button type="button"
+                                        class="attendee-filter px-4 py-2 text-sm font-semibold bg-[#1E3A5F] text-white"
+                                        data-filter="all"
+                                        aria-pressed="true">
+                                    All
+                                </button>
+
+                                <button type="button"
+                                        class="attendee-filter px-4 py-2 text-sm font-semibold bg-white text-slate-600 hover:bg-slate-50 border-l border-slate-200"
+                                        data-filter="members"
+                                        aria-pressed="false">
+                                    Members
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                        <div id="attendeeMessage" class="hidden rounded-lg p-3 text-sm mb-4"></div>
+
+                        <div id="attendeeList" class="divide-y divide-slate-100"></div>
+
+                        <div id="attendeeEmpty" class="hidden py-10 text-center">
+                            <i class="fa-regular fa-user text-3xl text-slate-300 mb-3"></i>
+                            <p id="attendeeEmptyText" class="text-sm text-slate-500"></p>
+                        </div>
+
+                    </section>
+
+                </div><!-- /#eventTabAttendees -->
+
+                <!-- Attendee data for JavaScript -->
+                <script type="application/json" id="attendeeData"><?php
+                    echo json_encode(
+                        [
+                            'currentAccountId' => (int) $accountId,
+                            'attendees' => $attendees
+                        ],
+                        JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
+                    );
+                ?></script>
+
+            <?php endif; ?>
+
         </div>
     </main>
 

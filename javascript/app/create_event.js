@@ -6,6 +6,10 @@ $(document).ready(function () {
     const $scheduleList = $("#scheduleList");
     const $emptySchedules = $("#emptySchedules");
     const $formMessage = $("#formMessage");
+    const $formPanel = $("#scheduleFormPanel");
+    const $formPlaceholder = $("#scheduleFormPlaceholder");
+    const $scheduleNotice = $("#scheduleNotice");
+    const $scheduleError = $("#scheduleFormError");
 
     // Schedules exist only in this browser-side array until Publish Event.
     let schedules = [];
@@ -24,14 +28,70 @@ $(document).ready(function () {
         });
     }
 
+    // ---------------------------------
+    // MESSAGES
+    // ---------------------------------
+
+    // Page-level message (publish, event name, image). Scrolls only if off-screen.
     function showMessage(message, type) {
         $formMessage
             .removeClass("hidden bg-red-50 text-red-700 bg-green-50 text-green-700 bg-blue-50 text-blue-700")
             .addClass(type === "success" ? "bg-green-50 text-green-700" :
                 type === "info" ? "bg-blue-50 text-blue-700" : "bg-red-50 text-red-700")
             .text(message);
-        $("html, body").animate({ scrollTop: $formMessage.offset().top - 120 }, 200);
+
+        const rect = $formMessage[0].getBoundingClientRect();
+        if (rect.top < 0 || rect.bottom > window.innerHeight) {
+            $formMessage[0].scrollIntoView({ behavior: "smooth", block: "center" });
+        }
     }
+
+    // Error shown inside the schedule form, no scrolling.
+    function showScheduleError(message) {
+        $scheduleError.removeClass("hidden").text(message);
+    }
+
+    function clearScheduleError() {
+        $scheduleError.addClass("hidden").empty();
+    }
+
+    // Notice shown at the top of the Event Schedules section.
+    function showScheduleNotice(message, type) {
+        $scheduleNotice
+            .removeClass("hidden bg-green-50 text-green-700 bg-blue-50 text-blue-700")
+            .addClass(type === "success" ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700")
+            .text(message);
+    }
+
+    function clearScheduleNotice() {
+        $scheduleNotice.addClass("hidden").empty();
+    }
+
+    function scrollToSchedules() {
+        const top = $("#eventSchedulesSection").offset().top - 90;
+        $("html, body").animate({ scrollTop: Math.max(top, 0) }, 250);
+    }
+
+    // ---------------------------------
+    // SCHEDULE FORM VISIBILITY
+    // ---------------------------------
+
+    function openScheduleForm() {
+        $formPlaceholder.addClass("hidden");
+        $formPanel.removeClass("hidden");
+        ensureMap();
+        setTimeout(function () { if (map) map.invalidateSize(); }, 100);
+    }
+
+    function closeScheduleForm() {
+        $formPanel.addClass("hidden");
+        $formPlaceholder.removeClass("hidden");
+        clearScheduleError();
+    }
+
+    // ---------------------------------
+    // SCHEDULE LIST
+    // ---------------------------------
 
     function formatSchedule(schedule) {
         const date = new Date(schedule.event_date + "T00:00:00");
@@ -74,6 +134,7 @@ $(document).ready(function () {
         selectedCoordinates = null;
         updateCoordinateText();
         if (marker && map) map.removeLayer(marker);
+        clearScheduleError();
         renderSchedules();
     }
 
@@ -82,6 +143,10 @@ $(document).ready(function () {
             ? selectedCoordinates.lat.toFixed(6) + ", " + selectedCoordinates.lng.toFixed(6)
             : "No pin selected");
     }
+
+    // ---------------------------------
+    // MAP
+    // ---------------------------------
 
     function setMarker(lat, lng, zoom) {
         selectedCoordinates = { lat: Number(lat), lng: Number(lng) };
@@ -114,7 +179,7 @@ $(document).ready(function () {
 
     function initializeMap() {
         if (typeof L === "undefined") {
-            showMessage("The map library could not be loaded. Check your internet connection.", "error");
+            showScheduleError("The map library could not be loaded. Check your internet connection.");
             return;
         }
         map = L.map("scheduleMap").setView([14.5995, 120.9842], 11);
@@ -129,7 +194,20 @@ $(document).ready(function () {
         setTimeout(function () { map.invalidateSize(); }, 150);
     }
 
+    // The map is created the first time the form is shown,
+    // because Leaflet cannot size itself inside a hidden container.
+    function ensureMap() {
+        if (!map) initializeMap();
+    }
+
+    // ---------------------------------
+    // LOAD / VALIDATE SCHEDULE
+    // ---------------------------------
+
     function loadSchedule(schedule) {
+        clearScheduleNotice();
+        openScheduleForm();
+
         editingId = schedule.temp_id;
         $("#scheduleFormTitle").text("Edit Schedule");
         $("#venueName").val(schedule.venue_name);
@@ -139,9 +217,11 @@ $(document).ready(function () {
         $("#endTime").val(schedule.end_time);
         $("#venueCapacity").val(schedule.capacity ?? "");
         $("#removeCurrentSchedule, #clearScheduleForm").removeClass("hidden");
+        clearScheduleError();
         setMarker(schedule.latitude, schedule.longitude);
         renderSchedules();
-        setTimeout(function () { if (map) map.invalidateSize(); }, 100);
+
+        $formPanel[0].scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
 
     function validateSchedule() {
@@ -152,20 +232,22 @@ $(document).ready(function () {
         const end = $("#endTime").val();
         const capacity = $("#venueCapacity").val();
 
+        clearScheduleError();
+
         if (!venueName || !location || !date || !start || !end) {
-            showMessage("Complete the venue, location, date, start time, and end time.", "error");
+            showScheduleError("Complete the venue, location, date, start time, and end time.");
             return null;
         }
         if (end <= start) {
-            showMessage("The end time must be later than the start time.", "error");
+            showScheduleError("The end time must be later than the start time.");
             return null;
         }
         if (!selectedCoordinates) {
-            showMessage("Pin the venue location on the map before saving this schedule.", "error");
+            showScheduleError("Pin the venue location on the map before saving this schedule.");
             return null;
         }
         if (capacity !== "" && (!Number.isInteger(Number(capacity)) || Number(capacity) < 1)) {
-            showMessage("Venue capacity must be a positive whole number.", "error");
+            showScheduleError("Venue capacity must be a positive whole number.");
             return null;
         }
 
@@ -182,26 +264,43 @@ $(document).ready(function () {
         };
     }
 
+    // ---------------------------------
+    // SCHEDULE ACTIONS
+    // ---------------------------------
+
     $("#addSchedule").on("click", function () {
         resetScheduleForm();
+        clearScheduleNotice();
+        openScheduleForm();
         $("#venueName").trigger("focus");
     });
 
     $("#clearScheduleForm").on("click", resetScheduleForm);
+
+    $("#cancelScheduleForm").on("click", function () {
+        resetScheduleForm();
+        closeScheduleForm();
+    });
 
     $("#saveSchedule").on("click", function () {
         const schedule = validateSchedule();
         if (!schedule) return;
 
         const index = schedules.findIndex(item => item.temp_id === schedule.temp_id);
-        if (index >= 0) schedules[index] = schedule;
+        const isUpdate = index >= 0;
+
+        if (isUpdate) schedules[index] = schedule;
         else schedules.push(schedule);
 
-        editingId = schedule.temp_id;
-        renderSchedules();
-        $("#scheduleFormTitle").text("Schedule Saved Temporarily");
-        $("#removeCurrentSchedule, #clearScheduleForm").removeClass("hidden");
-        showMessage("Schedule saved to the temporary list. It has not been added to the database.", "success");
+        resetScheduleForm();
+        closeScheduleForm();
+
+        showScheduleNotice(
+            (isUpdate ? "Schedule updated." : "Schedule added.") +
+            " It is only saved in this list until you publish the event.",
+            "success"
+        );
+        scrollToSchedules();
     });
 
     $scheduleList.on("click", ".select-schedule, .edit-schedule", function () {
@@ -213,37 +312,50 @@ $(document).ready(function () {
     $scheduleList.on("click", ".delete-schedule", function () {
         const id = Number($(this).closest(".schedule-item").data("id"));
         schedules = schedules.filter(item => item.temp_id !== id);
-        if (editingId === id) resetScheduleForm();
-        else renderSchedules();
-        showMessage("Schedule removed from the temporary list. No database record was changed.", "info");
+
+        if (editingId === id) {
+            resetScheduleForm();
+            closeScheduleForm();
+        } else {
+            renderSchedules();
+        }
+
+        showScheduleNotice("Schedule removed from the temporary list. No database record was changed.", "info");
     });
 
     $("#removeCurrentSchedule").on("click", function () {
         if (editingId === null) return;
         schedules = schedules.filter(item => item.temp_id !== editingId);
         resetScheduleForm();
-        showMessage("Schedule removed from the temporary list.", "info");
+        closeScheduleForm();
+        showScheduleNotice("Schedule removed from the temporary list.", "info");
+        scrollToSchedules();
     });
 
     $("#searchLocation").on("click", function () {
         const query = $("#venueLocation").val().trim();
+        clearScheduleError();
         if (!query) {
-            showMessage("Enter a location to search for.", "error");
+            showScheduleError("Enter a location to search for.");
             return;
         }
         $.getJSON("https://nominatim.openstreetmap.org/search", {
             q: query, format: "jsonv2", limit: 1
         }).done(function (results) {
             if (!results || !results.length) {
-                showMessage("No matching location was found. You can pin it manually on the map.", "error");
+                showScheduleError("No matching location was found. You can pin it manually on the map.");
                 return;
             }
             setMarker(Number(results[0].lat), Number(results[0].lon));
             $("#venueLocation").val(results[0].display_name);
         }).fail(function () {
-            showMessage("Location search failed. You can still pin the venue manually.", "error");
+            showScheduleError("Location search failed. You can still pin the venue manually.");
         });
     });
+
+    // ---------------------------------
+    // EVENT IMAGE
+    // ---------------------------------
 
     $("#eventImage").on("change", function () {
         const file = this.files[0];
@@ -264,6 +376,10 @@ $(document).ready(function () {
         };
         reader.readAsDataURL(file);
     });
+
+    // ---------------------------------
+    // PUBLISH
+    // ---------------------------------
 
     $("#eventForm").on("submit", function (event) {
         event.preventDefault();
@@ -305,7 +421,7 @@ $(document).ready(function () {
                 return;
             }
             showMessage(response.message, "success");
-            window.location.href = "event.php?event_id=" + encodeURIComponent(response.event_id);
+            window.location.replace("event.php?id=" + encodeURIComponent(response.event_id));
         }).fail(function (xhr) {
             const response = xhr.responseJSON;
             showMessage(response?.message || "A server error occurred while publishing.", "error");
@@ -314,5 +430,7 @@ $(document).ready(function () {
         });
     });
 
-    initializeMap();
+  window.addEventListener("pageshow", function (event) {
+    if (event.persisted) window.location.reload();
+  });
 });

@@ -45,7 +45,8 @@ $tabInactive = 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-1
             <input type="hidden" id="view" name="view" value="<?= h($view) ?>">
             <input type="hidden" id="organization_id" name="organization_id" value="<?= $organizationId > 0 ? (int) $organizationId : '' ?>">
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Event filters -->
+            <div id="eventFilters" class="grid grid-cols-1 md:grid-cols-2 gap-4 <?= $view === 'events' ? '' : 'hidden' ?>">
 
                 <div>
                     <label for="status" class="block text-sm font-medium text-slate-700 mb-2">
@@ -76,6 +77,47 @@ $tabInactive = 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-1
                         <option value="nearest" <?= $sort === 'nearest' ? 'selected' : '' ?>>Nearest Date</option>
                         <option value="newest" <?= $sort === 'newest' ? 'selected' : '' ?>>Newest First</option>
                         <option value="oldest" <?= $sort === 'oldest' ? 'selected' : '' ?>>Oldest First</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Organization filters -->
+            <div id="orgFilters" class="grid grid-cols-1 md:grid-cols-2 gap-4 <?= $view === 'organizations' ? '' : 'hidden' ?>">
+
+                <div>
+                    <label for="university" class="block text-sm font-medium text-slate-700 mb-2">
+                        University
+                    </label>
+
+                    <select
+                        id="university"
+                        name="university"
+                        class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-slate-700 outline-none focus:border-[#1E3A5F] focus:ring-2 focus:ring-blue-100"
+                    >
+                        <option value="">All Universities</option>
+                        <?php foreach ($universities as $universityOption): ?>
+                            <option value="<?= h($universityOption) ?>" <?= $university === $universityOption ? 'selected' : '' ?>>
+                                <?= h($universityOption) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="org_sort" class="block text-sm font-medium text-slate-700 mb-2">
+                        Sort By
+                    </label>
+
+                    <select
+                        id="org_sort"
+                        name="org_sort"
+                        class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-slate-700 outline-none focus:border-[#1E3A5F] focus:ring-2 focus:ring-blue-100"
+                    >
+                        <option value="name_asc" <?= $orgSort === 'name_asc' ? 'selected' : '' ?>>Name (A-Z)</option>
+                        <option value="name_desc" <?= $orgSort === 'name_desc' ? 'selected' : '' ?>>Name (Z-A)</option>
+                        <option value="events_desc" <?= $orgSort === 'events_desc' ? 'selected' : '' ?>>Most Events</option>
+                        <option value="events_asc" <?= $orgSort === 'events_asc' ? 'selected' : '' ?>>Fewest Events</option>
                     </select>
                 </div>
 

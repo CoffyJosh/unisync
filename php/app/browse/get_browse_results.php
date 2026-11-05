@@ -1,4 +1,3 @@
-
 <?php
 require_once __DIR__ . '/../../db.php';
 
@@ -24,6 +23,14 @@ if (!in_array($status, ['all', 'upcoming', 'completed'], true)) {
 
 if (!in_array($sort, ['nearest', 'newest', 'oldest'], true)) {
     $sort = 'nearest';
+}
+
+// Organization filters
+$university = trim($_GET['university'] ?? '');
+$orgSort = $_GET['org_sort'] ?? 'name_asc';
+
+if (!in_array($orgSort, ['name_asc', 'name_desc', 'events_desc', 'events_asc'], true)) {
+    $orgSort = 'name_asc';
 }
 
 // Escape LIKE wildcards so "%" and "_" are searched literally.
@@ -133,6 +140,14 @@ if ($view === 'events' && $organizationId > 0) {
         $organizationId = 0;
     }
 }
+
+// Universities for the organization filter dropdown.
+$universities = $pdo->query("
+    SELECT DISTINCT university_name
+    FROM organization
+    WHERE status = 'active'
+    ORDER BY university_name ASC
+")->fetchAll(PDO::FETCH_COLUMN);
 
 $events = [];
 $organizations = [];
@@ -282,6 +297,29 @@ if ($view === 'events') {
         $params[':s1'] = $searchLike;
     }
 
+    if ($university !== '') {
+        $where[] = 'o.university_name = :university';
+        $params[':university'] = $university;
+    }
+
+    switch ($orgSort) {
+        case 'name_desc':
+            $orgOrderSQL = 'o.organization_name DESC';
+            break;
+
+        case 'events_desc':
+            $orgOrderSQL = 'event_count DESC, o.organization_name ASC';
+            break;
+
+        case 'events_asc':
+            $orgOrderSQL = 'event_count ASC, o.organization_name ASC';
+            break;
+
+        default:
+            $orgOrderSQL = 'o.organization_name ASC';
+            break;
+    }
+
     $whereSQL = implode(' AND ', $where);
 
     $countStmt = $pdo->prepare("
@@ -305,6 +343,7 @@ if ($view === 'events') {
         SELECT
             o.organization_id,
             o.organization_name,
+            o.university_name,
             o.description,
             (
                 SELECT COUNT(*)
@@ -314,7 +353,7 @@ if ($view === 'events') {
             ) AS event_count
         FROM organization o
         WHERE $whereSQL
-        ORDER BY o.organization_name ASC
+        ORDER BY $orgOrderSQL
         LIMIT :limit OFFSET :offset
     ");
 
@@ -458,9 +497,13 @@ else:
                     <div class="h-2 bg-[#1E3A5F]"></div>
 
                     <div class="p-5 flex flex-col flex-1">
-                        <h3 class="text-lg font-bold text-slate-800 mb-2 line-clamp-2">
+                        <h3 class="text-lg font-bold text-slate-800 mb-1 line-clamp-2">
                             <?= h($org['organization_name']) ?>
                         </h3>
+
+                        <p class="text-xs text-slate-400 mb-3 truncate">
+                            <?= h($org['university_name']) ?>
+                        </p>
 
                         <p class="text-sm text-slate-500 mb-4 line-clamp-3 min-h-[3.75rem]">
                             <?= h($org['description'] ?? 'No description available.') ?>

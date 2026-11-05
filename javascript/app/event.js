@@ -1,4 +1,3 @@
-
 // =====================================
 // REGISTER / CANCEL REGISTRATION
 // =====================================
@@ -36,6 +35,11 @@ function updateRegistration(action) {
         success: function (response) {
 
             if (response.success) {
+
+                // Keep the Attendees tab (Admins/Managers) in sync.
+                if (typeof syncOwnAttendeeState === 'function') {
+                    syncOwnAttendeeState(action);
+                }
 
                 if (action === 'register') {
 
@@ -809,5 +813,367 @@ $(document).ready(function () {
 
     // Recheck every second for schedule transitions.
     setInterval(updateAutomaticSelection, 1000);
+
+});
+
+
+// =====================================
+// ATTENDEE MANAGEMENT (ADMIN / MANAGER)
+// =====================================
+
+$(document).ready(function () {
+
+    const $attendeeData = $('#attendeeData');
+
+    // Only rendered for Admins and Managers of the event's organization.
+    if (!$attendeeData.length) {
+        return;
+    }
+
+
+    let payload = {};
+
+    try {
+        payload = JSON.parse($attendeeData.text() || '{}');
+    } catch (error) {
+        console.error('Unable to read attendee data:', error);
+        return;
+    }
+
+    let attendees = Array.isArray(payload.attendees)
+        ? payload.attendees
+        : [];
+
+    const currentAccountId = Number(payload.currentAccountId);
+
+    let activeFilter = 'all';
+
+    const $list = $('#attendeeList');
+    const $empty = $('#attendeeEmpty');
+    const $emptyText = $('#attendeeEmptyText');
+    const $message = $('#attendeeMessage');
+
+
+    // ---------------------------------
+    // HELPERS
+    // ---------------------------------
+
+    function getRegisteredCount() {
+        return attendees.filter(a => a.is_registered).length;
+    }
+
+
+    function updateCounts(count) {
+
+        const registeredCount = Number.isFinite(count)
+            ? count
+            : getRegisteredCount();
+
+        $('#attendeeRegisteredCount').text(registeredCount);
+        $('#attendeeTabCount').text('(' + registeredCount + ')');
+
+    }
+
+
+    function showMessage(type, text) {
+
+        $message
+            .removeClass('hidden bg-green-50 text-green-700 bg-red-50 text-red-700')
+            .addClass(type === 'success'
+                ? 'bg-green-50 text-green-700'
+                : 'bg-red-50 text-red-700')
+            .text(text);
+
+    }
+
+
+    function clearMessage() {
+
+        $message
+            .addClass('hidden')
+            .removeClass('bg-green-50 text-green-700 bg-red-50 text-red-700')
+            .empty();
+
+    }
+
+
+    // ---------------------------------
+    // RENDER LIST
+    // ---------------------------------
+
+    function renderAttendees() {
+
+        const visible = attendees.filter(a => {
+            return activeFilter === 'members'
+                ? a.is_member
+                : a.is_registered;
+        });
+
+        $list.empty();
+
+        if (!visible.length) {
+
+            $emptyText.text(
+                activeFilter === 'members'
+                    ? 'This organization has no active members.'
+                    : 'No one has registered for this event yet.'
+            );
+
+            $empty.removeClass('hidden');
+            return;
+        }
+
+        $empty.addClass('hidden');
+
+        visible.forEach(function (attendee) {
+
+            const $row = $('<div>', {
+                class: 'flex items-center gap-4 py-4',
+                'data-account-id': attendee.account_id
+            });
+
+            const initial = String(attendee.account_name || '?')
+                .trim()
+                .charAt(0)
+                .toUpperCase();
+
+            $row.append(
+                $('<div>', {
+                    class: 'w-11 h-11 shrink-0 rounded-full bg-blue-50 text-[#1E3A5F] flex items-center justify-center font-bold',
+                    text: initial
+                })
+            );
+
+            const $info = $('<div>', { class: 'min-w-0 flex-1' });
+
+            const $nameLine = $('<div>', {
+                class: 'flex flex-wrap items-center gap-2'
+            });
+
+            $nameLine.append(
+                $('<p>', {
+                    class: 'font-semibold text-slate-900 truncate',
+                    text: attendee.account_name
+                })
+            );
+
+            if (attendee.is_registered) {
+                $nameLine.append(
+                    $('<span>', {
+                        class: 'px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold',
+                        text: 'Attendee'
+                    })
+                );
+            }
+
+            $info.append($nameLine);
+
+            $info.append(
+                $('<p>', {
+                    class: 'text-sm text-slate-500 truncate',
+                    text: attendee.email
+                })
+            );
+
+            $row.append($info);
+
+            if (attendee.is_registered) {
+
+                $row.append(
+                    $('<button>', {
+                        type: 'button',
+                        class: 'attendee-remove shrink-0 px-3 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-sm font-semibold transition-colors',
+                        'data-account-id': attendee.account_id,
+                        text: 'Remove'
+                    })
+                );
+            }
+
+            $list.append($row);
+        });
+
+    }
+
+
+    // ---------------------------------
+    // TABS (DETAILS / ATTENDEES)
+    // ---------------------------------
+
+    $(document).on('click', '.event-tab', function () {
+
+        const tab = $(this).attr('data-tab');
+
+        $('.event-tab')
+            .removeClass('border-[#1E3A5F] text-[#1E3A5F] font-bold')
+            .addClass('border-transparent text-slate-500 font-semibold')
+            .attr('aria-selected', 'false');
+
+        $(this)
+            .removeClass('border-transparent text-slate-500 font-semibold')
+            .addClass('border-[#1E3A5F] text-[#1E3A5F] font-bold')
+            .attr('aria-selected', 'true');
+
+        if (tab === 'attendees') {
+
+            $('#eventTabDetails').addClass('hidden');
+            $('#eventTabAttendees').removeClass('hidden');
+
+        } else {
+
+            $('#eventTabAttendees').addClass('hidden');
+            $('#eventTabDetails').removeClass('hidden');
+
+            // Leaflet resizes itself on window resize,
+            // which fixes the map after it was hidden.
+            $(window).trigger('resize');
+        }
+
+    });
+
+
+    // ---------------------------------
+    // FILTERS (ALL / MEMBERS)
+    // ---------------------------------
+
+    $(document).on('click', '.attendee-filter', function () {
+
+        activeFilter = $(this).attr('data-filter') === 'members'
+            ? 'members'
+            : 'all';
+
+        $('.attendee-filter')
+            .removeClass('bg-[#1E3A5F] text-white')
+            .addClass('bg-white text-slate-600 hover:bg-slate-50')
+            .attr('aria-pressed', 'false');
+
+        $(this)
+            .removeClass('bg-white text-slate-600 hover:bg-slate-50')
+            .addClass('bg-[#1E3A5F] text-white')
+            .attr('aria-pressed', 'true');
+
+        clearMessage();
+        renderAttendees();
+
+    });
+
+
+    // ---------------------------------
+    // REMOVE ATTENDEE
+    // ---------------------------------
+
+    $(document).on('click', '.attendee-remove', function () {
+
+        const $button = $(this);
+        const targetAccountId = Number($button.attr('data-account-id'));
+
+        const attendee = attendees.find(a => a.account_id === targetAccountId);
+
+        if (!attendee) {
+            return;
+        }
+
+        if (!confirm('Remove ' + attendee.account_name + ' from this event?')) {
+            return;
+        }
+
+        clearMessage();
+
+        $button.prop('disabled', true).text('Removing...');
+
+        $.ajax({
+
+            url: window.location.pathname + window.location.search,
+            type: 'POST',
+
+            data: {
+                ajax: 1,
+                action: 'remove_attendee',
+                target_account_id: targetAccountId
+            },
+
+            dataType: 'json',
+
+            success: function (response) {
+
+                if (response.success) {
+
+                    attendee.is_registered = false;
+
+                    updateCounts(Number(response.registered_count));
+                    renderAttendees();
+                    showMessage('success', response.message);
+
+                    // If the current account removed itself, mirror
+                    // the sidebar's "cancel registration" state.
+                    if (targetAccountId === currentAccountId) {
+
+                        $('#registrationStatus')
+                            .addClass('hidden')
+                            .empty();
+
+                        if (!$('#registerButton').length) {
+
+                            $('#registrationStatus').after(
+                                $('<button>', {
+                                    id: 'registerButton',
+                                    type: 'button',
+                                    class: 'w-full bg-[#1E3A5F] text-white font-semibold py-3 rounded-lg hover:bg-[#294D78] transition-colors',
+                                    text: 'Register for Event'
+                                })
+                            );
+                        }
+                    }
+
+                } else {
+
+                    showMessage('error', response.message);
+
+                    $button.prop('disabled', false).text('Remove');
+                }
+
+            },
+
+            error: function (xhr) {
+
+                showMessage(
+                    'error',
+                    xhr.responseJSON?.message ||
+                    'Unable to remove this attendee. Please try again.'
+                );
+
+                $button.prop('disabled', false).text('Remove');
+            }
+
+        });
+
+    });
+
+
+    // ---------------------------------
+    // SIDEBAR REGISTRATION SYNC
+    // ---------------------------------
+
+    window.syncOwnAttendeeState = function (action) {
+
+        const own = attendees.find(a => a.account_id === currentAccountId);
+
+        if (!own) {
+            return;
+        }
+
+        own.is_registered = (action === 'register');
+
+        updateCounts();
+        renderAttendees();
+
+    };
+
+
+    // ---------------------------------
+    // INITIAL RENDER
+    // ---------------------------------
+
+    updateCounts();
+    renderAttendees();
 
 });
