@@ -39,23 +39,6 @@ A University Event Scheduling and Registration System. Students discover and joi
 - Git
 - A modern web browser with internet access (map tiles and icons load from CDNs)
 
-## Project Structure
-
-```
-unisync/
-├── public/              Pages opened in the browser (entry point)
-│   └── uploads/events/  Uploaded event images (created automatically)
-├── php/
-│   ├── db.php           Database connection
-│   ├── app/             Backend handlers (organization, event, account, ...)
-│   └── components/      Shared navbar and footer
-├── javascript/          jQuery / AJAX scripts and vendored libraries
-├── database/            SQL schema and seed scripts  <!-- TODO: confirm folder name -->
-├── docs/                Database and role documentation
-├── .env.example
-└── README.md
-```
-
 <!-- TODO: adjust the tree to match the actual repository -->
 
 ## Installation
