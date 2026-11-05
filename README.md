@@ -16,9 +16,8 @@ A University Event Scheduling and Registration System. Students discover and joi
 | Member | Role |
 |---|---|
 | Cofreros, Joshua Rei | Lead Developer: Backend, Frontend, and Database implementation |
-| Name | Documentation Lead: README, user roles and setup documentation |
-| Name | Database Documentation: ERD, schema and database documentation |
-| Name | QA and Progress Report: setup testing, PDF progress document, tracker |
+| Aranguste, Jerome | Documentation Lead: README, user roles and setup documentation |
+| Patrona, John Timothy | Database Documentation: ERD, schema and database documentation |
 
 ## Features
 
