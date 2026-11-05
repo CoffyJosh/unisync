@@ -1,6 +1,6 @@
 # UniSync
 
-A University Event Scheduling and Registration System. Students discover and join university organizations, browse events, and register. Organization Admins and Managers manage the organization, its members, and its events.
+A University Event Scheduling and Registration System. Students discover and join university organizations, browse events, and register. Organization Admins and Managers manage their organizations, members, and events.
 
 **COMP 018 – Database Administration · Activity 3 · Group 10**
 
@@ -9,6 +9,7 @@ A University Event Scheduling and Registration System. Students discover and joi
 | **Backend** | PHP (PDO, prepared statements) |
 | **Database** | PostgreSQL 18.6 |
 | **Frontend** | HTML, Tailwind CSS, JavaScript, jQuery (AJAX) |
+| **Local PHP Environment** | XAMPP |
 | **Repository branch to test** | `main` |
 
 ## Team
@@ -34,108 +35,174 @@ A University Event Scheduling and Registration System. Students discover and joi
 
 ## Prerequisites
 
-- PHP 8.1 or newer with the `pdo_pgsql`, `fileinfo`, and `mbstring` extensions enabled
-- PostgreSQL 18 (earlier versions are untested)
+- XAMPP with PHP 8.1 or newer
+- PostgreSQL 18.6
+- PHP extensions enabled:
+  - `pdo_pgsql`
+  - `fileinfo`
+  - `mbstring`
 - Git
-- A modern web browser with internet access (map tiles and icons load from CDNs)
-
-<!-- TODO: adjust the tree to match the actual repository -->
+- A modern web browser
+- Internet connection for map tiles and externally loaded icons
 
 ## Installation
 
 ### 1. Clone the repository
 
+Clone the repository using Git:
+
 ```bash
 git clone <repository-url>
-cd unisync
 ```
 
-### 2. Create the database
+Place the cloned project folder inside XAMPP's `htdocs` directory.
 
-Using `psql` as a PostgreSQL superuser:
+For example:
+
+```text
+C:\xampp\htdocs\unisync
+```
+
+### 2. Configure PHP in XAMPP
+
+1. Open the XAMPP Control Panel.
+2. Click **Config** beside Apache.
+3. Open `php.ini`.
+4. Find the following extension:
+
+```ini
+;extension=pdo_pgsql
+```
+
+5. Remove the semicolon (`;`) to enable it:
+
+```ini
+extension=pdo_pgsql
+```
+
+6. Make sure the following extensions are also enabled:
+
+```ini
+extension=fileinfo
+extension=mbstring
+```
+
+7. Save the file.
+8. Restart Apache through the XAMPP Control Panel.
+
+**Note:** The extension names or their existing configuration may vary depending on the PHP version bundled with XAMPP. If an extension is already enabled, do not add another duplicate entry.
+
+### 3. Create the PostgreSQL database
+
+You can create the database using either **pgAdmin 4** or the PostgreSQL command-line tool (`psql`).
+
+**Option A: Using pgAdmin 4**
+
+1. Open pgAdmin 4 and connect to your PostgreSQL server.
+2. Right-click **Databases**.
+3. Select **Create → Database**.
+4. Enter the database name:
+
+```text
+unisync
+```
+
+5. Save.
+
+**Option B: Using psql**
+
+Open a terminal and connect using a PostgreSQL account with permission to create databases:
 
 ```bash
-psql -U postgres -c "CREATE DATABASE unisync;"
+psql -U postgres
 ```
 
-### 3. Run the schema script
+Then execute:
+
+```sql
+CREATE DATABASE unisync;
+```
+
+You may use another database name, provided that the application's database configuration uses the same name.
+
+### 4. Create the database tables and schema
+
+You can also use either pgAdmin or `psql` to execute the database scripts.
+
+**Option A: Using pgAdmin 4**
+
+1. Select the `unisync` database.
+2. Open **Tools → Query Tool**.
+3. Open the project's database schema SQL script.
+4. Execute the script to create the required tables, relationships, and constraints.
+5. If a seed script is provided, execute it afterward to insert the sample records.
+
+**Option B: Using psql**
+
+If the project includes `database/schema.sql`, execute:
 
 ```bash
 psql -U postgres -d unisync -f database/schema.sql
 ```
 
-<!-- TODO: replace with the real script path(s) and order -->
-
-### 4. Load the sample data
+If a seed script is provided, execute it after the schema:
 
 ```bash
 psql -U postgres -d unisync -f database/seed.sql
 ```
 
-<!-- TODO: replace with the real seed script path -->
+Use the actual SQL script filenames and locations available in the repository. The schema must be created before inserting seed data.
 
-The seed data contains 100+ student accounts, 30 organizations, 50 events, and venues with real addresses and map coordinates. The `NOTIFICATION` table is intentionally left empty.
+### 5. Configure the database connection
 
-### 5. Configure the environment
+Configure the application's database connection using the environment configuration file provided by the project.
 
-```bash
-cp .env.example .env
-```
+If the repository includes `.env.example`, create a local `.env` file from it and update the values.
 
-Edit `.env` and fill in your own local values:
+Example configuration:
 
 | Variable | Description | Example |
 |---|---|---|
 | `DB_HOST` | PostgreSQL host | `localhost` |
 | `DB_PORT` | PostgreSQL port | `5432` |
 | `DB_NAME` | Database name | `unisync` |
-| `DB_USER` | Runtime database user | `unisync_app` |
-| `DB_PASSWORD` | Password for that user | `your_password_here` |
+| `DB_USER` | PostgreSQL username | `postgres` |
+| `DB_PASSWORD` | Password for that PostgreSQL user | Your local PostgreSQL password |
 
-Never commit `.env`. Only `.env.example` (placeholders) belongs in the repository.
+Make sure the database name, username, and password match your PostgreSQL configuration.
 
-### 6. Make the upload folder writable
+**Important:** Never commit `.env` or real database credentials to the repository. Only placeholder values should be included in `.env.example`.
 
-```bash
-mkdir -p public/uploads/events
-chmod -R 775 public/uploads
+### 6. Start the application
+
+1. Open the XAMPP Control Panel.
+2. Start **Apache**.
+3. Make sure your PostgreSQL server is running.
+4. Open the application in your browser:
+
+```text
+http://localhost/unisync/public/
 ```
 
-### 7. Start the application
-
-```bash
-php -S localhost:8000 -t public
-```
-
-Open <http://localhost:8000> in your browser.
-
-## Sample Accounts
-
-| Account | Email | Password | Purpose |
-|---|---|---|---|
-| <!-- TODO --> | <!-- TODO --> | <!-- TODO --> | Organization Admin |
-| <!-- TODO --> | <!-- TODO --> | <!-- TODO --> | Organization Manager |
-| <!-- TODO --> | <!-- TODO --> | <!-- TODO --> | Regular Member / Student |
-
-These are sample credentials for local testing only.
+If the repository is configured to use a different public entry point, use the appropriate URL for that setup.
 
 ## Application User Roles
 
-Application roles describe what a person can do after logging in. They are separate from PostgreSQL roles. End users do not get their own database login; the application connects through a single runtime account.
+Application roles describe what a person can do after logging in. They are separate from PostgreSQL database roles.
 
-| Application role | Responsibilities | Functions and data access | Intended database role |
-|---|---|---|---|
-| **Guest** (not logged in) | Browses public pages. | Read organizations and events. | Runtime account |
-| **Student / Member** | Joins organizations and registers for events. | Create/update own membership and registrations; read organizations and events. | `unisync_runtime_grp` |
-| **Organization Manager** | Runs events for their organization. | Everything a Member can do, plus create, update, and delete events and schedules; view attendees and remove them; remove regular Members. | `unisync_runtime_grp` |
-| **Organization Admin** | Administers the organization. | Everything a Manager can do, plus edit/delete the organization, change member roles, and remove any member. | `unisync_runtime_grp` |
-| **System Administrator** | Database and record maintenance outside the app. | Full administrative access to UniSync objects, not a superuser. | `unisync_admin_grp` |
-| **Application runtime (system account)** | The account PHP uses to connect. | SELECT, INSERT, UPDATE on application tables; no DDL. | `unisync_runtime_grp` |
-| **Viewer / auditor** | Reviews records and reports. | Read-only on approved tables and views. | `unisync_readonly_grp` |
+| Application role | Responsibilities |
+|---|---|
+| **Guest** (not logged in) | Browses public pages and available organizations and events. |
+| **Student / Member** | Joins organizations, leaves organizations, and registers for events. |
+| **Organization Manager** | Manages events and schedules, views attendees, removes attendees, and removes regular Members within their organization. |
+| **Organization Admin** | Manages the organization, changes member roles, and has the additional administrative permissions of an Admin. |
+| **System Administrator** | Database and record maintenance outside the normal application user workflow. |
 
-Organization roles (Admin, Manager, Member) are stored per organization in the `MEMBERSHIP` table, so one account can hold different roles in different organizations.
+Organization roles (Admin, Manager, Member) are stored per organization in the `MEMBERSHIP` table. This allows one account to have different roles in different organizations.
 
-Detailed database users, group roles, and privileges are in [`docs/database-roles.md`](docs/database-roles.md). <!-- TODO: create this file; no real passwords -->
+For example, an account can be an Admin in one organization and a regular Member in another.
+
+These application roles are enforced by the PHP backend. They should not be confused with PostgreSQL users or group roles.
 
 ## Database Overview
 
@@ -152,39 +219,41 @@ Database: `unisync` · Schema: `public` · 8 tables
 | `REGISTRATION` | Account-to-event registrations |
 | `NOTIFICATION` | Exists in the schema but is not used by the application |
 
-Key rules:
+### Key Rules
 
 - An account can hold only one membership per organization.
 - An account can register for an event only once.
 - A schedule's end time must be later than its start time.
-- Records are **soft-deleted** using a `status` column (`deleted`, `inactive`, `cancelled`), never removed from the table. Deleting an organization also marks its events as deleted.
+- Records are soft-deleted using a `status` column (such as `deleted`, `inactive`, or `cancelled`) rather than physically removed from the table.
+- Deleting an organization also marks its events as deleted.
 
-Full documentation (columns, keys, constraints, ERD): [`docs/database.md`](docs/database.md). <!-- TODO: create this file -->
+For complete documentation covering columns, keys, constraints, and the ERD, refer to `docs/database.md` if included in the repository.
 
 ## Troubleshooting
 
 | Problem | Likely cause and fix |
 |---|---|
-| `could not find driver` | The `pdo_pgsql` extension is disabled. Enable it in `php.ini` (`extension=pdo_pgsql`) and restart PHP. |
-| `password authentication failed for user` | `DB_USER` / `DB_PASSWORD` in `.env` do not match your PostgreSQL user. |
-| `database "unisync" does not exist` | Step 2 was skipped, or `DB_NAME` does not match the database you created. |
-| `relation "..." does not exist` | The schema script was not run, or it ran against a different database. |
-| Blank page or HTTP 500 | Check the PHP error output in the terminal running `php -S`. Usually a connection or missing-extension problem. |
-| Event image upload fails | `public/uploads/events` is not writable. See step 6. |
-| Map is blank | The browser has no internet access to load OpenStreetMap tiles and Leaflet. |
-| Icons missing | Font Awesome is loaded from a CDN. Check your internet connection. |
-| Port 8000 already in use | Start the server on another port, e.g. `php -S localhost:8080 -t public`. |
-| Re-running the seed script fails with duplicate key errors | Drop and recreate the database, then run the schema and seed scripts again. |
+| `could not find driver` | The `pdo_pgsql` extension is disabled. Enable it in XAMPP's `php.ini` and restart Apache. |
+| `password authentication failed for user` | The PostgreSQL username or password in the environment configuration does not match your PostgreSQL account. |
+| `database "unisync" does not exist` | The database was not created, or the configured database name does not match. |
+| `relation "..." does not exist` | The schema script was not executed, or it was executed against a different database. |
+| Blank page or HTTP 500 | Check the Apache PHP error logs in XAMPP. This may be caused by a database connection or PHP configuration issue. |
+| Event image upload fails | Check whether the application's upload directory exists and is writable by Apache. |
+| Map is blank | Check your internet connection. Map tiles and Leaflet resources require external access. |
+| Icons missing | Font Awesome is loaded externally. Check your internet connection. |
+| Apache will not start | Another application may already be using Apache's configured port, commonly port 80 or 443. |
+| Re-running the seed script fails with duplicate key errors | Existing records may already be present. Use a clean test database before running the seed script again. |
 
 ## Security Notes
 
-- Do not commit `.env` or any real credentials.
-- Passwords in the seed data are hashes of sample passwords for testing only.
+- Do not commit `.env` or real database credentials.
+- Passwords should be stored as hashes, not plaintext.
 - All database access uses PDO prepared statements.
+- Application permissions must be validated by the PHP backend, not only by hiding interface elements.
 
 ## AI Usage
 
-AI tools were used during development. The full declaration (tools, tasks, and how the output was validated) is in the progress documentation PDF. <!-- TODO: add link -->
+AI tools were used during development. The full declaration, including the tools used, tasks performed, and how their output was validated, is provided in the project progress documentation.
 
 ## License
 
