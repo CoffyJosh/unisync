@@ -87,7 +87,7 @@ $membershipLabel = $isMember
 
                     </div>
 
-                    <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">
+                    <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight break-words">
                         <?= e($organizationName) ?>
                     </h1>
 
@@ -97,17 +97,51 @@ $membershipLabel = $isMember
 
                 </div>
 
-                <!-- Organization Management Action -->
-                <?php if ($canManageEvents): ?>
-                    <button
-                        type="button"
-                        id="openEditOrganization"
-                        class="inline-flex items-center justify-center gap-2 bg-white text-[#142C4C] hover:bg-blue-50 font-bold px-5 py-3 rounded-xl transition"
-                    >
-                        <i class="fa-solid fa-pen-to-square"></i>
-                        Edit Organization
-                    </button>
-                <?php endif; ?>
+                <!-- Membership / Management Actions (right side, stacked) -->
+                <div class="flex flex-col gap-2 shrink-0 w-full sm:w-40">
+
+                    <?php if (!$isMember): ?>
+
+                        <button
+                            type="button"
+                            id="joinOrganization"
+                            data-organization-id="<?= (int) $organizationId ?>"
+                            class="w-full inline-flex items-center justify-center gap-1.5 bg-white text-[#142C4C] hover:bg-blue-50 text-xs font-semibold px-3 py-2 rounded-lg transition"
+                        >
+                            <i class="fa-solid fa-user-plus"></i>
+                            Join Organization
+                        </button>
+
+                    <?php else: ?>
+
+                        <button
+                            type="button"
+                            id="leaveOrganization"
+                            data-organization-id="<?= (int) $organizationId ?>"
+                            data-role="<?= htmlspecialchars($role, ENT_QUOTES, 'UTF-8') ?>"
+                            data-member-count="<?= count($members) ?>"
+                            class="w-full inline-flex items-center justify-center gap-1.5 border border-white/30 text-white hover:bg-white/10 text-xs font-semibold px-3 py-2 rounded-lg transition"
+                        >
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            Leave Organization
+                        </button>
+
+                    <?php endif; ?>
+
+                    <?php if ($canManageEvents): ?>
+
+                        <button
+                            type="button"
+                            id="openEditOrganization"
+                            class="w-full inline-flex items-center justify-center gap-1.5 bg-white text-[#142C4C] hover:bg-blue-50 text-xs font-semibold px-3 py-2 rounded-lg transition"
+                        >
+                            <i class="fa-solid fa-pen-to-square"></i>
+                            Edit Organization
+                        </button>
+
+                    <?php endif; ?>
+
+                </div>
 
             </div>
 
@@ -439,46 +473,115 @@ $membershipLabel = $isMember
 
                     <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-0">
+                        <div class="flex flex-col">
 
                             <?php foreach ($members as $member): ?>
 
-                                <div class="flex items-center gap-4 p-5 border-b border-slate-100">
+                            <?php
+                                $isCurrentUser = $accountId !== null
+                                    && (int) $member['account_id'] === (int) $accountId;
 
-                                    <div class="w-12 h-12 shrink-0 rounded-full bg-blue-50 text-[#1E3A5F] flex items-center justify-center font-bold">
-                                        <?= e(strtoupper(substr($member['account_name'], 0, 1))) ?>
-                                    </div>
+                                // Text color for the role tag/dropdown (the border follows the text color).
+                                $dropdownColors = [
+                                    'Admin'   => 'text-blue-700',
+                                    'Manager' => 'text-amber-600',
+                                    'Member'  => 'text-green-700'
+                                ];
+                                $dropdownColor = $dropdownColors[$member['role']] ?? 'text-slate-600';
+                            ?>
 
-                                    <div class="flex-1 min-w-0">
+                            <div class="member-row flex items-center gap-4 p-5 border-b border-slate-100">
 
-                                        <p class="font-bold text-slate-800 truncate">
-                                            <?= e($member['account_name']) ?>
+                                <div class="w-12 h-12 shrink-0 rounded-full bg-blue-50 text-[#1E3A5F] flex items-center justify-center font-bold">
+                                    <?= e(strtoupper(substr($member['account_name'], 0, 1))) ?>
+                                </div>
 
-                                            <?php if (
-                                                $accountId !== null &&
-                                                (string) $member['account_id'] === (string) $accountId
-                                            ): ?>
-                                                <span class="text-xs text-blue-700 font-medium">
-                                                    (You)
-                                                </span>
-                                            <?php endif; ?>
-                                        </p>
+                                <div class="flex-1 min-w-0">
 
-                                        <p class="text-xs text-slate-400 mt-1">
-                                            <?php if (!empty($member['membership_date'])): ?>
-                                                Joined <?= e(date('M j, Y', strtotime($member['membership_date']))) ?>
-                                            <?php else: ?>
-                                                Membership date unavailable
-                                            <?php endif; ?>
-                                        </p>
+                                    <p class="font-bold text-slate-800 truncate">
+                                        <?= e($member['account_name']) ?>
 
-                                    </div>
+                                        <?php if ($isCurrentUser): ?>
+                                            <span class="text-xs text-blue-700 font-medium">
+                                                (You)
+                                            </span>
+                                        <?php endif; ?>
+                                    </p>
 
-                                    <span class="shrink-0 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
-                                        <?= e($member['role']) ?>
-                                    </span>
+                                    <p class="text-xs text-slate-400 mt-1">
+                                        <?php if (!empty($member['membership_date'])): ?>
+                                            Joined <?= e(date('M j, Y', strtotime($member['membership_date']))) ?>
+                                        <?php else: ?>
+                                            Membership date unavailable
+                                        <?php endif; ?>
+                                    </p>
 
                                 </div>
+
+                                <!-- Role + Kick/Leave, same line, right-aligned -->
+                                <div class="flex items-center justify-end gap-2 shrink-0">
+
+                                    <?php if ($isAdmin): ?>
+
+                                        <div class="role-wrap relative <?= $dropdownColor ?>">
+
+                                            <select
+                                                class="member-role-select appearance-none cursor-pointer h-9 w-32 rounded-full bg-white border-2 border-current text-inherit text-xs font-bold pl-4 pr-9 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                                data-membership-id="<?= (int) $member['membership_id'] ?>"
+                                                data-is-self="<?= $isCurrentUser ? 'true' : 'false' ?>"
+                                                data-member-name="<?= e($member['account_name']) ?>"
+                                                data-current-role="<?= e($member['role']) ?>"
+                                            >
+                                                <option class="text-slate-700" value="Admin" <?= $member['role'] === 'Admin' ? 'selected' : '' ?>>Admin</option>
+                                                <option class="text-slate-700" value="Manager" <?= $member['role'] === 'Manager' ? 'selected' : '' ?>>Manager</option>
+                                                <option class="text-slate-700" value="Member" <?= $member['role'] === 'Member' ? 'selected' : '' ?>>Member</option>
+                                            </select>
+
+                                            <svg class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3"
+                                                 viewBox="0 0 12 12" fill="none" stroke="currentColor"
+                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M2 4l4 4 4-4"/>
+                                            </svg>
+
+                                        </div>
+
+                                    <?php else: ?>
+
+                                        <!-- Static tag: same look and width as the admin dropdown -->
+                                        <span class="inline-flex items-center justify-center h-9 w-32 rounded-full bg-white border-2 border-current <?= $dropdownColor ?> text-xs font-bold">
+                                            <?= e($member['role']) ?>
+                                        </span>
+
+                                    <?php endif; ?>
+
+                                    <?php if ($isCurrentUser && $isAdmin): ?>
+
+                                        <button
+                                            type="button"
+                                            class="leave-member inline-flex items-center justify-center h-9 w-20 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold"
+                                            data-organization-id="<?= (int) $organizationId ?>"
+                                            data-role="<?= e($role) ?>"
+                                            data-member-count="<?= count($members) ?>"
+                                        >
+                                            Leave
+                                        </button>
+
+                                    <?php elseif (!$isCurrentUser && $canManageEvents && ($isAdmin || $member['role'] === 'Member')): ?>
+
+                                        <button
+                                            type="button"
+                                            class="kick-member inline-flex items-center justify-center h-9 w-20 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold"
+                                            data-membership-id="<?= (int) $member['membership_id'] ?>"
+                                            data-member-name="<?= e($member['account_name']) ?>"
+                                        >
+                                            Kick
+                                        </button>
+
+                                    <?php endif; ?>
+
+                                </div>
+
+                            </div>
 
                             <?php endforeach; ?>
 

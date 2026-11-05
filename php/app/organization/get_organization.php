@@ -112,6 +112,7 @@ $canManageEvents = in_array($role, [
 // Organization members
 $memberSql = "
     SELECT
+        m.membership_id,
         a.account_id,
         a.account_name,
         m.role,
