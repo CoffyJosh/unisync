@@ -90,14 +90,45 @@ Edit `.env` and fill in your own local values:
 
 Never commit `.env`. Only `.env.example` (placeholders) belongs in the repository.
 
-### 6. Make the upload folder writable
+### 6. Enable the required PHP extensions
+
+Locate the `php.ini` file used by your standalone PHP installation:
 
 ```bash
-mkdir -p public/uploads/events
-chmod -R 775 public/uploads
+php --ini
 ```
 
-### 7. Start the application
+Open the listed configuration file and make sure these extensions are enabled:
+
+```ini
+extension=pdo_pgsql
+extension=fileinfo
+extension=mbstring
+```
+
+Save the file and restart the PHP development server if it is already running.
+
+Verify that the extensions are enabled:
+
+```bash
+php -m
+```
+
+### 7. Make the upload folder writable
+
+Make sure this directory exists:
+
+```text
+public/uploads/events/
+```
+
+The directory must be writable by PHP so event image uploads can be saved.
+
+On Windows, check the folder's security permissions if uploads fail.
+
+### 8. Start the application
+
+From the project root, run:
 
 ```bash
 php -S localhost:8000
@@ -155,12 +186,12 @@ Full documentation (columns, keys, constraints, ERD): [`docs/database.md`](docs/
 
 | Problem | Likely cause and fix |
 |---|---|
-| `could not find driver` | The `pdo_pgsql` extension is disabled. Enable it in `php.ini` (`extension=pdo_pgsql`) and restart PHP. |
+| `could not find driver` | The `pdo_pgsql` extension is disabled. Enable it in `php.ini` and restart the PHP server. |
 | `password authentication failed for user` | `DB_USER` / `DB_PASSWORD` in `.env` do not match your PostgreSQL user. |
 | `database "grp10_unisyncdb" does not exist` | Step 2 was skipped, or `DB_NAME` does not match the database you created. |
 | `relation "..." does not exist` | The schema script was not run, or it ran against a different database. |
 | Blank page or HTTP 500 | Check the PHP error output in the terminal running `php -S`. Usually a connection or missing-extension problem. |
-| Event image upload fails | `public/uploads/events` is not writable. See step 6. |
+| Event image upload fails | `public/uploads/events` is not writable. See step 7. |
 | Map is blank | The browser has no internet access to load OpenStreetMap tiles and Leaflet. |
 | Icons missing | Font Awesome is loaded from a CDN. Check your internet connection. |
 | Port 8000 already in use | Start the server on another port, e.g. `php -S localhost:8080`. |
