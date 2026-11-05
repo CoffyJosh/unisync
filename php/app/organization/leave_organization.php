@@ -47,7 +47,7 @@ try {
 
     if (!$orgStmt->fetchColumn()) {
         $pdo->rollBack();
-        respond(false, 'Organization not found.', 404);
+        respond(false, 'This organization no longer exists.', 404, ['organization_gone' => true]);
     }
 
     // Lock the current membership.

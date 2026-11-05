@@ -67,6 +67,9 @@ try {
              INNER JOIN organization o
                 ON e.organization_id = o.organization_id
              WHERE r.account_id = :account_id
+               AND r.status = 'active'
+               AND e.status <> 'deleted'
+               AND o.status = 'active'
                AND o.organization_name ILIKE :search
              ORDER BY r.registration_date DESC, r.registration_id DESC
              LIMIT :limit OFFSET :offset"
@@ -176,6 +179,8 @@ try {
              INNER JOIN organization o
                 ON m.organization_id = o.organization_id
              WHERE m.account_id = :account_id
+               AND m.status = 'active'
+               AND o.status = 'active'
                AND o.organization_name ILIKE :search
              ORDER BY o.organization_name ASC
              LIMIT :limit OFFSET :offset"

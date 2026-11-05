@@ -616,22 +616,20 @@ $membershipLabel = $isMember
     <?php if ($canManageEvents): ?>
         <!-- Edit Organization Modal -->
         <div id="editOrganizationModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
-            <div class="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-xl">
+            <div class="w-full max-w-2xl max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-xl overflow-hidden">
 
-                <div class="flex items-center justify-between p-6 border-b border-slate-200">
+                <!-- Header -->
+                <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-200">
                     <div>
-                        <h2 class="text-xl font-bold text-slate-900">
-                            Edit Organization
-                        </h2>
-                        <p class="text-sm text-slate-500 mt-1">
-                            Update your organization's information.
-                        </p>
+                        <h2 class="text-xl font-bold text-slate-900">Edit Organization</h2>
+                        <p class="text-sm text-slate-500 mt-0.5">Update your organization's information.</p>
                     </div>
 
                     <button
                         type="button"
                         id="closeEditOrganization"
-                        class="text-slate-400 hover:text-slate-700 text-2xl"
+                        class="shrink-0 w-9 h-9 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 text-2xl leading-none transition"
+                        aria-label="Close"
                     >
                         &times;
                     </button>
@@ -640,78 +638,97 @@ $membershipLabel = $isMember
                 <form
                     action="../php/app/organization/update_organization.php"
                     method="POST"
-                    class="px-6 pb-6 pt-2 md:px-8 md:pb-8 md:pt-2 space-y-6"
+                    class="flex flex-col min-h-0 flex-1"
                 >
-                    <input
-                        type="hidden"
-                        name="organization_id"
-                        value="<?= (int) $organizationId ?>"
-                    >
+                    <input type="hidden" name="organization_id" value="<?= (int) $organizationId ?>">
 
-                    <div>
-                        <label for="edit_organization_name"
-                            class="block text-sm font-semibold text-slate-700 mb-2">
-                            Organization Name
-                        </label>
+                    <!-- Body -->
+                    <div class="flex-1 overflow-y-auto px-6 py-6 space-y-5">
 
-                        <input
-                            type="text"
-                            id="edit_organization_name"
-                            name="organization_name"
-                            maxlength="150"
-                            required
-                            value="<?= e($organization['organization_name']) ?>"
-                            class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-100"
-                        >
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div>
+                                <label for="edit_organization_name"
+                                    class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                    Organization Name
+                                </label>
+                                <input
+                                    type="text"
+                                    id="edit_organization_name"
+                                    name="organization_name"
+                                    maxlength="150"
+                                    required
+                                    value="<?= e($organization['organization_name']) ?>"
+                                    class="w-full rounded-lg border border-slate-300 px-4 py-2.5 outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-100"
+                                >
+                            </div>
+
+                            <div>
+                                <label for="edit_university_name"
+                                    class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                    University Name
+                                </label>
+                                <input
+                                    type="text"
+                                    id="edit_university_name"
+                                    name="university_name"
+                                    maxlength="150"
+                                    required
+                                    value="<?= e($organization['university_name']) ?>"
+                                    class="w-full rounded-lg border border-slate-300 px-4 py-2.5 outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-100"
+                                >
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="edit_description"
+                                class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Description
+                                <span class="font-normal text-slate-400">(Optional)</span>
+                            </label>
+                            <textarea
+                                id="edit_description"
+                                name="description"
+                                rows="5"
+                                class="w-full rounded-lg border border-slate-300 px-4 py-2.5 outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-100 resize-y"
+                            ><?= e($organization['description']) ?></textarea>
+                        </div>
+
                     </div>
 
-                    <div>
-                        <label for="edit_university_name"
-                            class="block text-sm font-semibold text-slate-700 mb-2">
-                            University Name
-                        </label>
+                    <!-- Footer -->
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 bg-slate-50 border-t border-slate-200">
 
-                        <input
-                            type="text"
-                            id="edit_university_name"
-                            name="university_name"
-                            maxlength="150"
-                            required
-                            value="<?= e($organization['university_name']) ?>"
-                            class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-100"
-                        >
-                    </div>
+                        <?php if ($isAdmin): ?>
+                            <button
+                                type="button"
+                                id="deleteOrganization"
+                                data-organization-id="<?= (int) $organizationId ?>"
+                                class="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100 transition"
+                            >
+                                <i class="fa-solid fa-trash"></i>
+                                Delete Organization
+                            </button>
+                        <?php else: ?>
+                            <span></span>
+                        <?php endif; ?>
 
-                    <div>
-                        <label for="edit_description"
-                            class="block text-sm font-semibold text-slate-700 mb-2">
-                            Description
-                            <span class="font-normal text-slate-400">(Optional)</span>
-                        </label>
+                        <div class="flex flex-col-reverse sm:flex-row gap-3">
+                            <button
+                                type="button"
+                                id="cancelEditOrganization"
+                                class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 transition"
+                            >
+                                Cancel
+                            </button>
 
-                        <textarea
-                            id="edit_description"
-                            name="description"
-                            rows="5"
-                            class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-100 resize-y"
-                        ><?= e($organization['description']) ?></textarea>
-                    </div>
+                            <button
+                                type="submit"
+                                class="rounded-lg bg-[#1E3A5F] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#294D78] transition"
+                            >
+                                Save Changes
+                            </button>
+                        </div>
 
-                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
-                        <button
-                            type="button"
-                            id="cancelEditOrganization"
-                            class="rounded-xl border border-slate-300 px-6 py-3 font-semibold text-slate-600 hover:bg-slate-50"
-                        >
-                            Cancel
-                        </button>
-
-                        <button
-                            type="submit"
-                            class="rounded-xl bg-[#1E3A5F] px-6 py-3 font-semibold text-white hover:bg-blue-950"
-                        >
-                            Save Changes
-                        </button>
                     </div>
                 </form>
 

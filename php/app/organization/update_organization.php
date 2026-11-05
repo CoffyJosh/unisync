@@ -47,6 +47,20 @@ if (strlen($organizationName) > 150 || strlen($universityName) > 150) {
 }
 
 try {
+    // The organization may have been deleted while the form was open.
+    $activeCheck = $pdo->prepare("
+        SELECT 1
+        FROM organization
+        WHERE organization_id = :organization_id
+          AND status = 'active'
+    ");
+    $activeCheck->execute([':organization_id' => $organizationId]);
+
+    if (!$activeCheck->fetchColumn()) {
+        echo '<script>alert("This organization no longer exists."); window.location.href = "../../../public/browse.php";</script>';
+        exit;
+    }
+
     // Verify that the current account is an Admin or Manager.
     $permissionQuery = $pdo->prepare("
         SELECT 1

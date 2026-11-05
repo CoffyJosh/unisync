@@ -69,8 +69,24 @@ try {
     $target = $targetStmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$target) {
+        // Was the organization itself deleted?
+        $goneStmt = $pdo->prepare("
+            SELECT o.status
+            FROM membership m
+            INNER JOIN organization o
+                ON o.organization_id = m.organization_id
+            WHERE m.membership_id = :membership_id
+        ");
+        $goneStmt->execute(['membership_id' => $membershipId]);
+        $orgStatus = $goneStmt->fetchColumn();
+
         $pdo->rollBack();
-        respond(false, 'Active membership not found.', 404);
+
+        if ($orgStatus !== false && $orgStatus !== 'active') {
+            respond(false, 'This organization no longer exists.', 404, ['organization_gone' => true]);
+        }
+
+        respond(false, 'Active member not found.', 404);
     }
 
     $isSelf = (int) $target['account_id'] === (int) $accountId;

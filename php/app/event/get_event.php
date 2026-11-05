@@ -39,8 +39,27 @@ $eventQuery->execute([
 $event = $eventQuery->fetch(PDO::FETCH_ASSOC);
 
 if (!$event) {
-    http_response_code(404);
-    exit('Event not found.');
+
+    // Register / unregister / remove-attendee requests expect JSON.
+    if (
+        $_SERVER['REQUEST_METHOD'] === 'POST' &&
+        isset($_POST['ajax'])
+    ) {
+        header('Content-Type: application/json; charset=UTF-8');
+        http_response_code(404);
+
+        echo json_encode([
+            'success' => false,
+            'event_gone' => true,
+            'message' => 'This event no longer exists.'
+        ]);
+
+        exit;
+    }
+
+    // Normal page visit (typed URL, Back button, stale link).
+    header('Location: browse.php');
+    exit;
 }
 
 // =====================================
@@ -442,6 +461,44 @@ if (
             exit;
         }
 
+        if ($action === 'delete_event') {
+            if (!$canManageEvent) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'You are not authorized to delete this event.'
+                ]);
+                exit;
+            }
+
+            $pdo->beginTransaction();
+
+            // Soft-delete the event.
+            $pdo->prepare(
+                "UPDATE event
+                SET status = 'deleted'
+                WHERE event_id = :event_id"
+            )->execute([':event_id' => $eventId]);
+
+            // Free up the venue schedules.
+            $pdo->prepare(
+                "UPDATE event_schedule
+                SET status = 'cancelled'
+                WHERE event_id = :event_id
+                AND status IN ('pending', 'confirmed')"
+            )->execute([':event_id' => $eventId]);
+
+            $pdo->commit();
+
+            echo json_encode([
+                'success' => true,
+                'action' => 'delete_event',
+                'redirect' => 'dashboard.php',
+                'message' => 'Event deleted.'
+            ]);
+            exit;
+        }
+
         if ($action === 'register') {
 
             if (!$canRegister) {
@@ -575,6 +632,10 @@ if (
         }
 
     } catch (PDOException $e) {
+
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
 
         if ($e->getCode() === '23505') {
 

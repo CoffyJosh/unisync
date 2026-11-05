@@ -9,14 +9,14 @@ if (session_status() === PHP_SESSION_NONE) {
 
 header('Content-Type: application/json');
 
-function respond($success, $message, $statusCode = 200)
+function respond($success, $message, $statusCode = 200, $extra = [])
 {
     http_response_code($statusCode);
 
-    echo json_encode([
+    echo json_encode(array_merge([
         'success' => $success,
         'message' => $message
-    ]);
+    ], $extra));
 
     exit;
 }
@@ -75,7 +75,7 @@ try {
     ]);
 
     if (!$organizationStmt->fetchColumn()) {
-        respond(false, 'Organization not found or unavailable.', 404);
+        respond(false, 'This organization no longer exists.', 404, ['organization_gone' => true]);
     }
 
     // Insert membership or reactivate an existing inactive membership.

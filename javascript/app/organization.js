@@ -1,5 +1,17 @@
 $(document).ready(function () {
 
+    const BROWSE_URL = 'browse.php';
+
+    // If the server says the organization no longer exists, tell the user and leave the page.
+    function handleOrgGone(response) {
+        if (response && response.organization_gone) {
+            alert(response.message || 'This organization no longer exists.');
+            window.location.href = BROWSE_URL;
+            return true;
+        }
+        return false;
+    }
+
     $('.org-tab').on('click', function () {
 
         const selectedTab = $(this).data('tab');
@@ -61,6 +73,10 @@ $(document).ready(function () {
                 organization_id: organizationId
             },
             success: function (response) {
+                if (handleOrgGone(response)) {
+                    return;
+                }
+
                 alert(response.message);
 
                 if (response.success) {
@@ -71,6 +87,11 @@ $(document).ready(function () {
             },
             error: function (xhr) {
                 const response = xhr.responseJSON;
+
+                if (handleOrgGone(response)) {
+                    return;
+                }
+
                 alert(response?.message || 'Unable to join organization.');
 
                 button.prop('disabled', false).text('Join Organization');
@@ -112,16 +133,28 @@ $(document).ready(function () {
                 organization_id: organizationId
             },
             success: function (response) {
+                if (handleOrgGone(response)) {
+                    return;
+                }
+
                 alert(response.message);
 
                 if (response.success) {
-                    window.location.reload();
+                    if (response.organization_deleted) {
+                        window.location.href = BROWSE_URL;
+                    } else {
+                        window.location.reload();
+                    }
                 } else {
                     button.prop('disabled', false).html(originalHtml);
                 }
             },
             error: function (xhr) {
                 const response = xhr.responseJSON;
+
+                if (handleOrgGone(response)) {
+                    return;
+                }
 
                 alert(response?.message || 'Unable to leave organization.');
 
@@ -186,6 +219,10 @@ $(document).ready(function () {
                 role: newRole
             },
             success: function (response) {
+                if (handleOrgGone(response)) {
+                    return;
+                }
+
                 if (!response.success) {
                     alert(response.message);
                     revertSelection();
@@ -211,6 +248,10 @@ $(document).ready(function () {
                 }
             },
             error: function (xhr) {
+                if (handleOrgGone(xhr.responseJSON)) {
+                    return;
+                }
+
                 alert(xhr.responseJSON?.message || 'Unable to update member role.');
                 revertSelection();
                 $select.prop('disabled', false);
@@ -238,6 +279,10 @@ $(document).ready(function () {
                 membership_id: membershipId
             },
             success: function (response) {
+                if (handleOrgGone(response)) {
+                    return;
+                }
+
                 alert(response.message);
 
                 if (response.success) {
@@ -247,8 +292,96 @@ $(document).ready(function () {
                 }
             },
             error: function (xhr) {
+                if (handleOrgGone(xhr.responseJSON)) {
+                    return;
+                }
+
                 alert(xhr.responseJSON?.message || 'Unable to kick this member.');
                 button.prop('disabled', false).text('Kick');
+            }
+        });
+    });
+
+    // Delete Organization (Admin only, from the Edit Organization modal)
+    $('#deleteOrganization').on('click', function () {
+        const button = $(this);
+        const organizationId = button.data('organization-id');
+        const organizationName = String(button.data('organization-name'));
+
+        const typed = prompt(
+            'This will delete the organization for all members.\n\n' +
+            'Type the organization name to confirm:\n' + organizationName
+        );
+
+        if (typed === null) {
+            return;
+        }
+
+        if (typed.trim() !== organizationName) {
+            alert('The name did not match. The organization was not deleted.');
+            return;
+        }
+
+        button.prop('disabled', true).text('Deleting...');
+
+        $.ajax({
+            url: '../php/app/organization/delete_organization.php',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                organization_id: organizationId
+            },
+            success: function (response) {
+                if (handleOrgGone(response)) {
+                    return;
+                }
+
+                alert(response.message);
+
+                if (response.success) {
+                    window.location.href = BROWSE_URL;
+                } else {
+                    button.prop('disabled', false).text('Delete Organization');
+                }
+            },
+            error: function (xhr) {
+                if (handleOrgGone(xhr.responseJSON)) {
+                    return;
+                }
+
+                alert(xhr.responseJSON?.message || 'Unable to delete the organization.');
+                button.prop('disabled', false).text('Delete Organization');
+            }
+        });
+    });
+
+    $(document).on('click', '#deleteOrganization', function () {
+        if (!confirm('Delete this organization? This cannot be undone.')) return;
+
+        const $btn = $(this).prop('disabled', true);
+
+        $.ajax({
+            url: '../php/app/organization/delete_organization.php',
+            type: 'POST',
+            dataType: 'json',
+            data: { organization_id: $btn.data('organization-id') },
+            success: function (res) {
+                if (res.success) {
+                    window.location.href = 'dashboard.php';
+                } else {
+                    alert(res.message);
+                    $btn.prop('disabled', false);
+                }
+            },
+            error: function (xhr) {
+                const res = xhr.responseJSON || {};
+                if (res.organization_gone) {
+                    alert(res.message);
+                    window.location.href = 'dashboard.php';
+                    return;
+                }
+                alert(res.message || 'Something went wrong. Please try again.');
+                $btn.prop('disabled', false);
             }
         });
     });

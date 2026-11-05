@@ -18,8 +18,8 @@ if (
     !is_string($organizationSlug) ||
     trim($organizationSlug) === ''
 ) {
-    http_response_code(400);
-    exit('Invalid organization URL.');
+    header('Location: browse.php');
+    exit;
 }
 
 // Organization details
@@ -43,8 +43,8 @@ $stmt->execute([
 $organization = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$organization) {
-    http_response_code(404);
-    exit('Organization not found.');
+    header('Location: browse.php');
+    exit;
 }
 
 // Validate organization slug against its actual name.
@@ -60,8 +60,8 @@ $expectedSlug = strtolower(
 );
 
 if (!hash_equals($expectedSlug, strtolower(trim($organizationSlug)))) {
-    http_response_code(404);
-    exit('Organization not found.');
+    header('Location: browse.php');
+    exit;
 }
 
 // Current account's membership

@@ -175,12 +175,23 @@ $publicSchedules = array_values(array_filter(
                 </div>
 
                 <?php if ($canManageEvent): ?>
+
+                    <!-- Edit Button -->
                     <a href="edit_event.php?id=<?php echo (int) $eventId; ?>"
                     class="absolute bottom-4 right-4 z-10 w-11 h-11 rounded-full bg-white text-[#1E3A5F] shadow-lg flex items-center justify-center hover:bg-blue-50 transition-colors"
                     title="Edit event"
                     aria-label="Edit event">
                         <i class="fa-solid fa-pencil"></i>
                     </a>
+
+                    <!-- Delete Button -->
+                    <button type="button"
+                            id="deleteEventButton"
+                            class="absolute bottom-4 right-[4.25rem] z-10 w-11 h-11 rounded-full bg-white text-red-600 shadow-lg flex items-center justify-center hover:bg-red-50 transition-colors"
+                            title="Delete event"
+                            aria-label="Delete event">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
                 <?php endif; ?>
             </section>
 
