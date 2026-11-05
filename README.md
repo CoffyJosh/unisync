@@ -1,371 +1,209 @@
 # UniSync
 
-**A Web-Based University Event and Organization Scheduling System**
+A University Event Scheduling and Registration System. Students discover and join university organizations, browse events, and register. Organization Admins and Managers manage the organization, its members, and its events.
 
-UniSync is a web-based platform designed to help students discover university events, register for activities, and keep track of their schedules. It also allows student organizations to manage their events, members, and registrations in one place.
+**COMP 018 – Database Administration · Activity 3 · Group 10**
 
-The project is being developed using **PHP, PostgreSQL, HTML, Tailwind CSS, and jQuery**.
-
----
-
-## 1. Features
-
-### Student Features
-- Create an account and log in.
-- Browse and search university events.
-- Search for student organizations through events.
-- Sort and filter events.
-- View event details, including schedules and venues.
-- Register for public events.
-- View and track registered events through a student dashboard.
-- Update basic account information.
-
-### Organization Features
-- Create and manage student organizations.
-- Manage organization memberships.
-- Create, edit, and manage organization events.
-- View students registered for an event.
-- View organization members and their registration status for an event.
-
-### Event Management
-Events have the following statuses:
-- Pending
-- Confirmed
-- Cancelled
-- Completed
-
-The system also checks for scheduling conflicts involving the same venue and date.
-
----
-
-## 2. Technology Stack
-
-| Technology | Purpose |
+| | |
 |---|---|
-| PHP | Backend development |
-| PostgreSQL | Database management |
-| HTML | Page structure |
-| Tailwind CSS | Styling and layout |
-| jQuery | Frontend interactions and AJAX |
+| **Backend** | PHP (PDO, prepared statements) |
+| **Database** | PostgreSQL 18.6 |
+| **Frontend** | HTML, Tailwind CSS, JavaScript, jQuery (AJAX) |
+| **Repository branch to test** | `main` |
 
----
+## Team
 
-## 3. Project Structure
-
-The project structure is still being developed and may change as UniSync grows.
-
-**Do not assume that files will always stay in their current folders.** Before creating or modifying files, check the latest version of the repository and follow its existing organization.
-
-Some important files may include:
-
-| File | Purpose |
+| Member | Role |
 |---|---|
-| `.env` | Contains your local database credentials and environment settings. |
-| `.env.example` | Shared example of the required environment variables. |
-| `.gitignore` | Specifies files Git should not upload. |
-| `README.md` | Project documentation and setup guide. |
-| Database initialization SQL | Contains the database tables and constraints. |
-| Database seed SQL | Contains sample data for development and testing. |
-| Database connection file | Handles the application's PostgreSQL connection. |
+| Cofreros, Joshua Rei | Lead Developer: Backend, Frontend, and Database implementation |
+| Name | Documentation Lead: README, user roles and setup documentation |
+| Name | Database Documentation: ERD, schema and database documentation |
+| Name | QA and Progress Report: setup testing, PDF progress document, tracker |
 
-File names and locations may change as development continues. Check the repository before relying on any specific path.
+## Features
 
----
+- Account registration and login
+- Create organizations (creator becomes Admin)
+- Join / leave organizations, with automatic Admin succession
+- Role management and member removal (Admin / Manager)
+- Edit and delete organizations (Admin)
+- Create, edit, and delete events with multiple schedules and map-pinned venues
+- Event status derived from schedules (Pending, Confirmed, Completed, Cancelled)
+- Live countdown to the next confirmed schedule
+- Event registration and cancellation
+- Attendee list with removal for Admins and Managers
 
-## 4. Requirements
+## Prerequisites
 
-Before running the project, make sure you have:
+- PHP 8.1 or newer with the `pdo_pgsql`, `fileinfo`, and `mbstring` extensions enabled
+- PostgreSQL 18 (earlier versions are untested)
+- Git
+- A modern web browser with internet access (map tiles and icons load from CDNs)
 
-- PHP installed.
-- PostgreSQL installed and running.
-- A database management tool such as pgAdmin (optional, but recommended).
-- Git installed.
-- Visual Studio Code or another code editor.
-- A web browser.
+## Project Structure
 
-Make sure your PHP installation has the PostgreSQL PDO extension enabled (`pdo_pgsql`).
+```
+unisync/
+├── public/              Pages opened in the browser (entry point)
+│   └── uploads/events/  Uploaded event images (created automatically)
+├── php/
+│   ├── db.php           Database connection
+│   ├── app/             Backend handlers (organization, event, account, ...)
+│   └── components/      Shared navbar and footer
+├── javascript/          jQuery / AJAX scripts and vendored libraries
+├── database/            SQL schema and seed scripts  <!-- TODO: confirm folder name -->
+├── docs/                Database and role documentation
+├── .env.example
+└── README.md
+```
 
----
+<!-- TODO: adjust the tree to match the actual repository -->
 
-## 5. Getting Started
+## Installation
 
-### Step 1: Clone the Repository
-
-Open a terminal and clone the shared repository:
+### 1. Clone the repository
 
 ```bash
 git clone <repository-url>
+cd unisync
 ```
 
-Enter the project directory:
+### 2. Create the database
+
+Using `psql` as a PostgreSQL superuser:
 
 ```bash
-cd <project-folder>
+psql -U postgres -c "CREATE DATABASE unisync;"
 ```
 
-Open the project in Visual Studio Code:
+### 3. Run the schema script
 
 ```bash
-code .
+psql -U postgres -d unisync -f database/schema.sql
 ```
 
-Replace the placeholders with the actual repository URL and folder name.
+<!-- TODO: replace with the real script path(s) and order -->
 
-### Step 2: Configure Environment Variables
+### 4. Load the sample data
 
-Find the `.env.example` file in the repository.
-
-Create your own `.env` file using it as a reference. If the project uses a different configuration method, follow the current implementation.
-
-Example environment configuration:
-
-```env
-APP_ENV=development
-
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_NAME=unisync_db
-DB_USER=postgres
-DB_PASSWORD=your_local_password
+```bash
+psql -U postgres -d unisync -f database/seed.sql
 ```
 
-Change the values according to your own PostgreSQL installation.
+<!-- TODO: replace with the real seed script path -->
 
-**Important:**
-- Each member should use their own local database credentials.
-- Never upload your `.env` file to GitHub.
-- Keep `.env.example` updated whenever the required environment variables change.
-- PHP does not automatically load `.env` files. The application must have a dotenv package or another environment-loading method configured.
+The seed data contains 100+ student accounts, 30 organizations, 50 events, and venues with real addresses and map coordinates. The `NOTIFICATION` table is intentionally left empty.
 
-### Step 3: Create the Database
+### 5. Configure the environment
 
-Open PostgreSQL through pgAdmin or your preferred database tool.
-
-Create a database named:
-
-```sql
-unisync_db
+```bash
+cp .env.example .env
 ```
 
-Locate the database initialization SQL file in the repository and execute it against the newly created database.
+Edit `.env` and fill in your own local values:
 
-If sample data is available, locate and execute the seed SQL file afterward.
+| Variable | Description | Example |
+|---|---|---|
+| `DB_HOST` | PostgreSQL host | `localhost` |
+| `DB_PORT` | PostgreSQL port | `5432` |
+| `DB_NAME` | Database name | `unisync` |
+| `DB_USER` | Runtime database user | `unisync_app` |
+| `DB_PASSWORD` | Password for that user | `your_password_here` |
 
-**Important:** Check the SQL scripts before running them. Initialization scripts may contain commands that drop and recreate existing tables, which can delete your current data.
+Never commit `.env`. Only `.env.example` (placeholders) belongs in the repository.
 
-For an existing database that still has the legacy `STUDENT` table, back it up and run [`db/migrate_student_to_account.sql`](db/migrate_student_to_account.sql) once before deploying the account-based application. This migration renames the identity and foreign-key columns in place. Do not run `db/init.sql` for this migration because it drops tables and data.
+### 6. Make the upload folder writable
 
-### Step 4: Run the Application
+```bash
+mkdir -p public/uploads/events
+chmod -R 775 public/uploads
+```
 
-Follow the current project configuration and identify its PHP entry point.
-
-If the application is configured to use a `public` directory as its document root, you may run:
+### 7. Start the application
 
 ```bash
 php -S localhost:8000 -t public
 ```
 
-Otherwise, use the appropriate command for the current project structure.
+Open <http://localhost:8000> in your browser.
 
-Open the local address in your browser:
+## Sample Accounts
 
-```text
-http://localhost:8000
-```
+| Account | Email | Password | Purpose |
+|---|---|---|---|
+| <!-- TODO --> | <!-- TODO --> | <!-- TODO --> | Organization Admin |
+| <!-- TODO --> | <!-- TODO --> | <!-- TODO --> | Organization Manager |
+| <!-- TODO --> | <!-- TODO --> | <!-- TODO --> | Regular Member / Student |
 
-If the application uses a different port or server configuration, follow the latest instructions from the team.
+These are sample credentials for local testing only.
 
----
+## Application User Roles
 
-## 6. Git Workflow
+Application roles describe what a person can do after logging in. They are separate from PostgreSQL roles. End users do not get their own database login; the application connects through a single runtime account.
 
-Since everyone is working on the same project, make sure your changes are pushed to the shared repository.
+| Application role | Responsibilities | Functions and data access | Intended database role |
+|---|---|---|---|
+| **Guest** (not logged in) | Browses public pages. | Read organizations and events. | Runtime account |
+| **Student / Member** | Joins organizations and registers for events. | Create/update own membership and registrations; read organizations and events. | `unisync_runtime_grp` |
+| **Organization Manager** | Runs events for their organization. | Everything a Member can do, plus create, update, and delete events and schedules; view attendees and remove them; remove regular Members. | `unisync_runtime_grp` |
+| **Organization Admin** | Administers the organization. | Everything a Manager can do, plus edit/delete the organization, change member roles, and remove any member. | `unisync_runtime_grp` |
+| **System Administrator** | Database and record maintenance outside the app. | Full administrative access to UniSync objects, not a superuser. | `unisync_admin_grp` |
+| **Application runtime (system account)** | The account PHP uses to connect. | SELECT, INSERT, UPDATE on application tables; no DDL. | `unisync_runtime_grp` |
+| **Viewer / auditor** | Reviews records and reports. | Read-only on approved tables and views. | `unisync_readonly_grp` |
 
-### Before Starting Work
+Organization roles (Admin, Manager, Member) are stored per organization in the `MEMBERSHIP` table, so one account can hold different roles in different organizations.
 
-Get the latest changes from the main branch:
+Detailed database users, group roles, and privileges are in [`docs/database-roles.md`](docs/database-roles.md). <!-- TODO: create this file; no real passwords -->
 
-```bash
-git switch main
-git pull origin main
-```
+## Database Overview
 
-### Create a Branch
+Database: `unisync` · Schema: `public` · 8 tables
 
-Create a separate branch for your task:
-
-```bash
-git switch -c feature/your-task
-```
-
-Examples:
-
-```bash
-git switch -c feature/homepage
-git switch -c feature/event-details
-git switch -c feature/login
-```
-
-Use a branch name that describes what you're working on.
-
-### Save Your Changes
-
-Check which files you modified:
-
-```bash
-git status
-```
-
-Stage your changes:
-
-```bash
-git add .
-```
-
-Commit your work:
-
-```bash
-git commit -m "Add homepage layout"
-```
-
-Push your branch:
-
-```bash
-git push -u origin feature/your-task
-```
-
-### Submit Your Changes
-
-After pushing your branch:
-
-1. Open the repository on GitHub.
-2. Create a Pull Request.
-3. Let the team review your changes.
-4. Merge the changes into the main branch once approved.
-
-### Important Git Reminders
-
-- Avoid working directly on the `main` branch.
-- Pull the latest changes before starting a new task.
-- Commit regularly instead of waiting until everything is finished.
-- Use meaningful commit messages.
-- Do not upload `.env`, passwords, or other private credentials.
-- Avoid force-pushing or overwriting another member's work.
-- If you encounter a merge conflict, coordinate with the person responsible for the affected files.
-
----
-
-## 7. Application Roles
-
-UniSync uses a single account system. An account that creates an organization automatically becomes its Admin.
-
-Organization roles determine what a member can do.
-
-| Role | Permissions |
+| Table | Purpose |
 |---|---|
-| Admin | Manage the organization, manage members and their roles, and manage organization events. |
-| Manager | Create and manage events and view attendees and members. Cannot manage membership roles. |
-| Member | View organization information and events, and register for events. |
+| `ACCOUNT` | User accounts |
+| `ORGANIZATION` | University organizations |
+| `MEMBERSHIP` | Links accounts to organizations and stores the role |
+| `EVENT` | Events created by organizations |
+| `VENUE` | Event locations with coordinates |
+| `EVENT_SCHEDULE` | Dates, times, and venue for each event |
+| `REGISTRATION` | Account-to-event registrations |
+| `NOTIFICATION` | Exists in the schema but is not used by the application |
 
-Students do not need to belong to an organization to register for its public events.
+Key rules:
 
----
-
-## 8. Event Registration and Management
-
-A few important rules guide how event registration works:
-
+- An account can hold only one membership per organization.
 - An account can register for an event only once.
-- Being an organization member does not automatically register an account for its events.
-- Public events can be joined by accounts outside the hosting organization.
-- Only authorized organization members can manage their organization's events.
-- An event's end time must be later than its start time.
-- The system prevents overlapping events from being scheduled at the same venue and date.
+- A schedule's end time must be later than its start time.
+- Records are **soft-deleted** using a `status` column (`deleted`, `inactive`, `cancelled`), never removed from the table. Deleting an organization also marks its events as deleted.
 
-### Attendees and Members
+Full documentation (columns, keys, constraints, ERD): [`docs/database.md`](docs/database.md). <!-- TODO: create this file -->
 
-Event management separates these into two views:
+## Troubleshooting
 
-**Attendees**
-- Displays all students registered for the selected event.
-- Includes students who are not members of the hosting organization.
-- Shows their names, email addresses, and registration dates.
+| Problem | Likely cause and fix |
+|---|---|
+| `could not find driver` | The `pdo_pgsql` extension is disabled. Enable it in `php.ini` (`extension=pdo_pgsql`) and restart PHP. |
+| `password authentication failed for user` | `DB_USER` / `DB_PASSWORD` in `.env` do not match your PostgreSQL user. |
+| `database "unisync" does not exist` | Step 2 was skipped, or `DB_NAME` does not match the database you created. |
+| `relation "..." does not exist` | The schema script was not run, or it ran against a different database. |
+| Blank page or HTTP 500 | Check the PHP error output in the terminal running `php -S`. Usually a connection or missing-extension problem. |
+| Event image upload fails | `public/uploads/events` is not writable. See step 6. |
+| Map is blank | The browser has no internet access to load OpenStreetMap tiles and Leaflet. |
+| Icons missing | Font Awesome is loaded from a CDN. Check your internet connection. |
+| Port 8000 already in use | Start the server on another port, e.g. `php -S localhost:8080 -t public`. |
+| Re-running the seed script fails with duplicate key errors | Drop and recreate the database, then run the schema and seed scripts again. |
 
-**Members**
-- Displays all members of the hosting organization.
-- Shows their names, email addresses, organization roles, and whether they registered for the selected event.
-- A member marked as "Not registered" simply has not registered for that event. It does not mean they were absent.
+## Security Notes
 
----
+- Do not commit `.env` or any real credentials.
+- Passwords in the seed data are hashes of sample passwords for testing only.
+- All database access uses PDO prepared statements.
 
-## 9. Development Guidelines
+## AI Usage
 
-To keep the project organized:
+AI tools were used during development. The full declaration (tools, tasks, and how the output was validated) is in the progress documentation PDF. <!-- TODO: add link -->
 
-- Check existing files before creating new ones.
-- Follow the naming conventions already used in the repository.
-- Keep related files organized.
-- Reuse existing components and functions when appropriate.
-- Avoid creating duplicate pages or database connections.
-- Coordinate with the team before moving, renaming, or deleting shared files.
-- Test your changes before pushing them.
-- Make sure your changes do not break existing features.
+## License
 
-If you're working on a frontend page, focus on making the layout and interactions work with the existing design. Coordinate with whoever is handling the backend before changing how data is retrieved or submitted.
-
----
-
-## 10. Troubleshooting
-
-### Database Connection Failed
-
-Check the following:
-- Is PostgreSQL running?
-- Does the `unisync_db` database exist?
-- Are your `.env` credentials correct?
-- Is the PostgreSQL PDO extension enabled in PHP?
-- Does the application's database connection configuration load the environment variables correctly?
-
-### Page Not Found
-
-- Check the current PHP entry point.
-- Confirm that you're running the application from the correct location.
-- Check whether the local server uses a specific document root.
-- Review the current project routing configuration.
-
-### Changes Are Missing
-
-Make sure you:
-- Saved your files.
-- Committed your changes.
-- Pushed your branch.
-- Are viewing the correct branch on GitHub.
-
-### Git Merge Conflict
-
-- Check which files have conflicts.
-- Coordinate with the teammate who modified the same files.
-- Resolve the conflicts carefully.
-- Test the affected functionality before committing the resolution.
-
----
-
-## 11. Project Scope
-
-The current development focuses on the core UniSync features: account registration, event browsing, registration, organization management, event scheduling, and dashboards.
-
-Some features are intentionally outside the current implementation scope, including:
-
-- QR-based attendance tracking.
-- Actual attendance monitoring.
-- Mobile application.
-- Automated notification functionality.
-- A separate organization directory page.
-
-These may be considered for future improvements, but they should not be treated as required features of the current version.
-
----
-
-## 12. Project Goal
-
-UniSync aims to make university event discovery and organization scheduling more organized and accessible. By bringing event browsing, registration, and organization management together, the platform provides students and organizations with a shared space to manage campus activities.
+For academic use in COMP 018 – Database Administration.
