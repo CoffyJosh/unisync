@@ -317,7 +317,7 @@ $(document).ready(function () {
             return;
         }
 
-        if (typed.trim() !== organizationName) {
+        if (typed.trim() !== organizationName.trim()) {
             alert('The name did not match. The organization was not deleted.');
             return;
         }
@@ -351,37 +351,6 @@ $(document).ready(function () {
 
                 alert(xhr.responseJSON?.message || 'Unable to delete the organization.');
                 button.prop('disabled', false).text('Delete Organization');
-            }
-        });
-    });
-
-    $(document).on('click', '#deleteOrganization', function () {
-        if (!confirm('Delete this organization? This cannot be undone.')) return;
-
-        const $btn = $(this).prop('disabled', true);
-
-        $.ajax({
-            url: '../php/app/organization/delete_organization.php',
-            type: 'POST',
-            dataType: 'json',
-            data: { organization_id: $btn.data('organization-id') },
-            success: function (res) {
-                if (res.success) {
-                    window.location.href = 'dashboard.php';
-                } else {
-                    alert(res.message);
-                    $btn.prop('disabled', false);
-                }
-            },
-            error: function (xhr) {
-                const res = xhr.responseJSON || {};
-                if (res.organization_gone) {
-                    alert(res.message);
-                    window.location.href = 'dashboard.php';
-                    return;
-                }
-                alert(res.message || 'Something went wrong. Please try again.');
-                $btn.prop('disabled', false);
             }
         });
     });
