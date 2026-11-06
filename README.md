@@ -154,21 +154,13 @@ The root `index.php` is the entry point and loads the homepage from `public/home
 
 ```text
 unisync/
-├── .env
 ├── .env.example
 ├── .gitignore
 ├── index.php
 ├── README.md
-├── TODO.md
-├── start_psql.bat
-├── stop_psqlbat
 │
-├── assets/
-│   └── images/
-│       └── default-event.jpg
 ├── config/
 │   └── db_connection_test.php
-├── css/                              [empty]
 ├── db/
 │   ├── init.sql
 │   ├── migrate_student_to_account.sql
@@ -176,29 +168,11 @@ unisync/
 ├── docs/
 │   └── user-roles.md
 │
-├── javascript/
-│   ├── jquery.js
-│   ├── tailwind.js
-│   └── app/
-│       ├── browse.js
-│       ├── create_event.js
-│       ├── dashboard.js
-│       ├── edit_event.js
-│       ├── event.js
-│       ├── home.js
-│       ├── login.js
-│       ├── manage_events.js
-│       ├── organization.js
-│       ├── provider_login.js
-│       ├── registration.js
-│       └── settings.js
-│
 ├── php/
 │   ├── db.php
 │   ├── components/
 │   │   ├── footer.php
 │   │   └── navbar.php
-│   ├── process/                      [empty]
 │   └── app/
 │       ├── account/
 │       │   └── settings.php
@@ -229,24 +203,43 @@ unisync/
 │           ├── update_member_role.php
 │           └── update_organization.php
 │
-├── public/
-│   ├── account_login.php
-│   ├── account_registration.php
-│   ├── browse.php
-│   ├── create_event.php
-│   ├── create_organization.php
-│   ├── dashboard.php
-│   ├── edit_event.php
-│   ├── event.php
-│   ├── home.php
-│   ├── manage_events.php
-│   ├── organization.php
-│   ├── provider_login.php
-│   ├── settings.php
-│   └── uploads/
-│       └── events/
-│           └── .gitkeep
-└── stop_psqlbat
+└── public/
+    ├── account_login.php
+    ├── account_registration.php
+    ├── browse.php
+    ├── create_event.php
+    ├── create_organization.php
+    ├── dashboard.php
+    ├── edit_event.php
+    ├── event.php
+    ├── home.php
+    ├── manage_events.php
+    ├── organization.php
+    ├── provider_login.php
+    ├── settings.php
+    ├── assets/
+    │   ├── images/
+    │   │   └── default-event.jpg
+    │   └── javascript/
+    │       ├── jquery.js
+    │       ├── leaflet.js
+    │       ├── tailwind.js
+    │       └── app/
+    │           ├── browse.js
+    │           ├── create_event.js
+    │           ├── dashboard.js
+    │           ├── edit_event.js
+    │           ├── event.js
+    │           ├── home.js
+    │           ├── login.js
+    │           ├── manage_events.js
+    │           ├── organization.js
+    │           ├── provider_login.js
+    │           ├── registration.js
+    │           └── settings.js
+    └── uploads/
+        └── events/
+            └── .gitkeep
 ```
 
 How the pieces connect: each page in `public/` has a matching script in `public/assets/javascript/app/`, which calls a PHP handler in `php/app/` through jQuery AJAX. Handlers use `php/db.php` to reach PostgreSQL.
