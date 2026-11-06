@@ -163,7 +163,6 @@ unisync/
 │   └── db_connection_test.php
 ├── db/
 │   ├── init.sql
-│   ├── migrate_student_to_account.sql
 │   └── seed.sql
 ├── docs/
 │   └── user-roles.md
