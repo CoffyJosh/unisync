@@ -13,8 +13,8 @@ require_once __DIR__ . '/../php/app/auth/process_provider_login.php';
 
     <title>Provider Login | UniSync</title>
 
-    <script src="../javascript/tailwind.js"></script>
-    <script src="../javascript/jquery.js"></script>
+    <script src="./assets/javascript/tailwind.js"></script>
+    <script src="./assets/javascript/jquery.js"></script>
 </head>
 
 <body class="min-h-screen bg-[#F5F7F5] text-slate-800">
@@ -215,7 +215,7 @@ require_once __DIR__ . '/../php/app/auth/process_provider_login.php';
     </main>
 
     <!-- Login JavaScript -->
-    <script src="../javascript/app/provider_login.js?v=1"></script>
+    <script src="./assets/javascript/app/provider_login.js?v=1"></script>
 
 </body>
 </html>

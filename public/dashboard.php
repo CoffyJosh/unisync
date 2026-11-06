@@ -36,8 +36,8 @@ if (!$account) {
 
     <title>My Dashboard | UniSync</title>
 
-    <script src="../javascript/tailwind.js"></script>
-    <script src="../javascript/jquery.js"></script>
+    <script src="./assets/javascript/tailwind.js"></script>
+    <script src="./assets/javascript/jquery.js"></script>
 </head>
 
 <body class="min-h-screen flex flex-col bg-slate-50 text-slate-800">
@@ -215,7 +215,7 @@ if (!$account) {
 
     <?php include __DIR__ . '/../php/components/footer.php'; ?>
 
-    <script src="../javascript/app/dashboard.js"></script>
+    <script src="./assets/javascript/app/dashboard.js"></script>
 
     <script>
         $(document).ready(function () {

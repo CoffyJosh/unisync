@@ -13,10 +13,10 @@ require_once __DIR__ . '/../php/app/auth/process_account_login.php';
     <title>Login | UniSync</title>
 
     <!-- Tailwind CSS -->
-    <script src="../javascript/tailwind.js"></script>
+    <script src="./assets/javascript/tailwind.js"></script>
 
     <!-- jQuery -->
-    <script src="../javascript/jquery.js"></script>
+    <script src="./assets/javascript/jquery.js"></script>
 </head>
 
 <body class="min-h-screen flex flex-col bg-slate-50">
@@ -168,7 +168,7 @@ require_once __DIR__ . '/../php/app/auth/process_account_login.php';
     <?php include '../php/components/footer.php'; ?>
 
     <!-- Login JavaScript -->
-    <script src="../javascript/app/login.js"></script>
+    <script src="./assets/javascript/app/login.js"></script>
 
 </body>
 </html>

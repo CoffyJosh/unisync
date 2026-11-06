@@ -39,9 +39,9 @@ $membershipLabel = $isMember
 
     <title><?= e($organizationName) ?> | UniSync</title>
 
-    <script src="../javascript/tailwind.js"></script>
-    <script src="../javascript/jquery.js"></script>
-    <script src="../javascript/app/organization.js"></script>
+    <script src="./assets/javascript/tailwind.js"></script>
+    <script src="./assets/javascript/jquery.js"></script>
+    <script src="./assets/javascript/app/organization.js"></script>
 </head>
 
 <body class="min-h-screen flex flex-col bg-slate-50 text-slate-800">

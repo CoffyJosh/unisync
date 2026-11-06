@@ -54,8 +54,8 @@ $publicSchedules = array_values(array_filter(
 
     <title><?php echo eventEscape($eventName); ?> | UniSync</title>
 
-    <script src="../javascript/jquery.js"></script>
-    <script src="../javascript/tailwind.js"></script>
+    <script src="./assets/javascript/jquery.js"></script>
+    <script src="./assets/javascript/tailwind.js"></script>
 
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
@@ -671,8 +671,8 @@ $publicSchedules = array_values(array_filter(
 
     <?php include __DIR__ . '/../php/components/footer.php'; ?>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="../javascript/app/event.js"></script>
+    <script src="./assets/javascript/leaflet.js"></script>
+    <script src="./assets/javascript/app/event.js"></script>
 
 </body>
 </html>

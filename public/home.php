@@ -12,8 +12,8 @@ require_once __DIR__ . '/../php/app/home/get_featured_events.php';
 
     <title>UniSync | Campus Events Made Simple</title>
 
-    <script src="../javascript/tailwind.js"></script>
-    <script src="../javascript/jquery.js"></script>
+    <script src="./assets/javascript/tailwind.js"></script>
+    <script src="./assets/javascript/jquery.js"></script>
 </head>
 
 <body class="min-h-screen flex flex-col bg-slate-50 text-slate-800">

@@ -17,16 +17,16 @@ $loginPage = $isProviderRegistration ? 'provider_login.php' : 'account_login.php
     <title>Create Account | UniSync</title>
 
     <!-- Tailwind CSS -->
-    <script src="../javascript/tailwind.js"></script>
+    <script src="./assets/javascript/tailwind.js"></script>
 
     <!-- jQuery -->
-    <script src="../javascript/jquery.js"></script>
+    <script src="./assets/javascript/jquery.js"></script>
 </head>
 
 <body class="min-h-screen flex flex-col bg-slate-50">
 
     <!-- Navbar -->
-    <?php include '../php/components/navbar.php'; ?>
+    <?php include './assets/php/components/navbar.php'; ?>
 
     <!-- Main Content -->
     <main class="flex-1 flex items-center justify-center px-4 py-12">
@@ -217,7 +217,7 @@ $loginPage = $isProviderRegistration ? 'provider_login.php' : 'account_login.php
     <?php include '../php/components/footer.php'; ?>
 
     <!-- Registration JavaScript -->
-    <script src="../javascript/app/registration.js"></script>
+    <script src="./assets/javascript/app/registration.js"></script>
 
 </body>
 </html>

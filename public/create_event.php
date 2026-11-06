@@ -74,7 +74,7 @@ $organizationPageUrl = 'organization.php?id='
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Event | UniSync</title>
-    <script src="../javascript/tailwind.js"></script>
+    <script src="./assets/javascript/tailwind.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
@@ -266,8 +266,8 @@ $organizationPageUrl = 'organization.php?id='
 </main>
 
 <?php require __DIR__ . '/../php/components/footer.php'; ?>
-<script src="../javascript/jquery.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="../javascript/app/create_event.js"></script>
+<script src="./assets/javascript/jquery.js"></script>
+<script src="./assets/javascript/leaflet.js"></script>
+<script src="./assets/javascript/app/create_event.js"></script>
 </body>
 </html>

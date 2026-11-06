@@ -14,8 +14,8 @@ $tabInactive = 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-1
 
     <title>Browse | UniSync</title>
 
-    <script src="../javascript/jquery.js"></script>
-    <script src="../javascript/tailwind.js"></script>
+    <script src="./assets/javascript/jquery.js"></script>
+    <script src="./assets/javascript/tailwind.js"></script>
 </head>
 
 <body class="bg-slate-50 text-slate-800">
@@ -147,7 +147,7 @@ $tabInactive = 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-1
 
     <?php include __DIR__ . '/../php/components/footer.php'; ?>
 
-    <script src="../javascript/app/browse.js"></script>
+    <script src="./assets/javascript/app/browse.js"></script>
 
 </body>
 </html>

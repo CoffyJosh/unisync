@@ -13,8 +13,8 @@ require_once __DIR__ . "/../php/app/account/settings.php";
 
     <title>Settings | UniSync</title>
 
-    <script src="../javascript/tailwind.js"></script>
-    <script src="../javascript/jquery.js"></script>
+    <script src="./assets/javascript/tailwind.js"></script>
+    <script src="./assets/javascript/jquery.js"></script>
 </head>
 
 <body class="min-h-screen flex flex-col bg-slate-50">
@@ -237,7 +237,7 @@ require_once __DIR__ . "/../php/app/account/settings.php";
 
     <?php include '../php/components/footer.php'; ?>
 
-    <script src="../javascript/app/settings.js"></script>
+    <script src="./assets/javascript/app/settings.js"></script>
 
 </body>
 </html>
