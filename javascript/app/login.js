@@ -79,7 +79,7 @@ $(document).ready(function () {
             success: function (response) {
 
                 if (response.success) {
-                    window.location.href = 'index.php';
+                    window.location.href = 'home.php';
 
                 } else {
 

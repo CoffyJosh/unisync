@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../db.php';
 
 // Redirect accounts that are already logged in.
 if (isset($_SESSION['account_id'])) {
-    header('Location: index.php');
+    header('Location: home.php');
     exit;
 }
 

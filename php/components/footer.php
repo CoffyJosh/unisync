@@ -8,7 +8,7 @@
             <!-- Branding -->
             <div class="space-y-4">
 
-                <a href="index.php" class="inline-flex items-center gap-2.5">
+                <a href="home.php" class="inline-flex items-center gap-2.5">
 
                     <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg"

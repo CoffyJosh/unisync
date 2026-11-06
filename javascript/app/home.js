@@ -1,4 +1,4 @@
- console.log("UniSync index.js loaded");
+ console.log("UniSync home.js loaded");
  
  $(document).ready(function () {
     console.log("Search form:", $("#eventSearchForm").length);

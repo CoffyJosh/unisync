@@ -494,7 +494,7 @@ Expected structure:
 UniSync/
 │
 ├── public/
-│   ├── index.php
+│   ├── home.php
 │   ├── browse.php
 │   ├── login.php
 │   ├── register.php

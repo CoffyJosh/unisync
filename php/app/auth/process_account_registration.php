@@ -6,7 +6,7 @@ $isProviderRegistration = ($_GET['redirect'] ?? '') === 'provider';
 
 $redirectPage = $isProviderRegistration
     ? 'provider_dashboard.php'
-    : 'index.php';
+    : 'home.php';
 
 // Redirect already logged-in accounts to the appropriate dashboard.
 if (isset($_SESSION['account_id'])) {

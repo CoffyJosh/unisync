@@ -88,7 +88,7 @@ $(document).ready(function () {
 
                     // Redirect after 2 seconds.
                     setTimeout(function () {
-                        window.location.href = 'index.php';
+                        window.location.href = 'home.php';
                     }, 2000);
 
                 } else {

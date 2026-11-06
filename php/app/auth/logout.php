@@ -9,5 +9,5 @@ $_SESSION = [];
 session_destroy();
 
 // Redirect to the public homepage.
-header('Location: ../../../public/index.php');
+header('Location: ../../../public/home.php');
 exit;

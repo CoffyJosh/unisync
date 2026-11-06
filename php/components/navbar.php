@@ -24,7 +24,7 @@ $authButtonLink = ($currentPage === 'account_login.php') ? 'account_registration
         <div class="flex items-center justify-between h-20 gap-8">
 
             <!-- UniSync Branding -->
-            <a href="index.php"
+            <a href="home.php"
             class="flex items-center gap-2.5 shrink-0 group">
 
                 <div class="w-10 h-10 rounded-xl bg-[#1E3A5F] flex items-center justify-center group-hover:bg-[#294D78] transition-colors">
@@ -78,7 +78,7 @@ $authButtonLink = ($currentPage === 'account_login.php') ? 'account_registration
             <!-- Navigation Links -->
             <div class="flex items-center gap-7 text-sm font-semibold text-slate-600">
 
-                <a href="index.php"
+                <a href="home.php"
                    class="hover:text-[#1E3A5F] transition-colors">
                     Home
                 </a>

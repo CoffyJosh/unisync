@@ -23,7 +23,7 @@ require_once __DIR__ . '/../php/app/auth/process_provider_login.php';
     <header class="bg-white border-b border-slate-200">
         <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
 
-            <a href="index.php" class="flex items-center gap-3">
+            <a href="home.php" class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-[#14532D] rounded-xl flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg"
                         class="w-6 h-6 text-white"
