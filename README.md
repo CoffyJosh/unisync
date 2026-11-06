@@ -154,58 +154,99 @@ The root `index.php` is the entry point and loads the homepage from `public/home
 
 ```text
 unisync/
-├── index.php                  # Root entry point
-├── .env.example               # Environment template (placeholders only)
+├── .env
+├── .env.example
 ├── .gitignore
+├── index.php
 ├── README.md
-├── start_psql.bat             # Start local PostgreSQL (Windows)
-├── stop_psql.bat              # Stop local PostgreSQL (Windows)
+├── TODO.md
+├── start_psql.bat
+├── stop_psqlbat
 │
+├── assets/
+│   └── images/
+│       └── default-event.jpg
 ├── config/
-│   └── db_connection_test.php # Quick database connection check
-│
+│   └── db_connection_test.php
+├── css/                              [empty]
 ├── db/
-│   ├── init.sql               # Schema (tables, constraints)
-│   ├── seed.sql               # Sample data
-│   └── migrate_student_to_account.sql  # Upgrade script for older databases only
-│
+│   ├── init.sql
+│   ├── migrate_student_to_account.sql
+│   └── seed.sql
 ├── docs/
-│   ├── user-roles.md          # Application roles mapped to database roles
-│   ├── database-roles.md      # Database users, group roles, privileges
-│   ├── database.md            # Tables, keys, constraints, ERD
-│   └── troubleshooting.md     # Extended setup troubleshooting
+│   └── user-roles.md
+│
+├── javascript/
+│   ├── jquery.js
+│   ├── tailwind.js
+│   └── app/
+│       ├── browse.js
+│       ├── create_event.js
+│       ├── dashboard.js
+│       ├── edit_event.js
+│       ├── event.js
+│       ├── home.js
+│       ├── login.js
+│       ├── manage_events.js
+│       ├── organization.js
+│       ├── provider_login.js
+│       ├── registration.js
+│       └── settings.js
 │
 ├── php/
-│   ├── db.php                 # PDO database connection
-│   ├── components/            # Shared navbar and footer
-│   └── app/                   # Backend handlers, grouped by feature
+│   ├── db.php
+│   ├── components/
+│   │   ├── footer.php
+│   │   └── navbar.php
+│   ├── process/                      [empty]
+│   └── app/
 │       ├── account/
+│       │   └── settings.php
 │       ├── auth/
+│       │   ├── logout.php
+│       │   ├── process_account_login.php
+│       │   ├── process_account_registration.php
+│       │   └── process_provider_login.php
 │       ├── browse/
+│       │   └── get_browse_results.php
 │       ├── dashboard/
+│       │   ├── cancel_registration.php
+│       │   └── get_dashboard.php
 │       ├── event/
+│       │   ├── create_event.php
+│       │   ├── get_create_event.php
+│       │   ├── get_event.php
+│       │   └── update_event.php
 │       ├── home/
+│       │   └── get_featured_events.php
 │       └── organization/
+│           ├── delete_organization.php
+│           ├── get_organization.php
+│           ├── join_organization.php
+│           ├── kick_member.php
+│           ├── leave_organization.php
+│           ├── save_organization.php
+│           ├── update_member_role.php
+│           └── update_organization.php
 │
-└── public/                    # Web-facing pages
-    ├── home.php
-    ├── account_login.php
-    ├── account_registration.php
-    ├── provider_login.php
-    ├── browse.php
-    ├── dashboard.php
-    ├── event.php
-    ├── create_event.php
-    ├── edit_event.php
-    ├── manage_events.php
-    ├── organization.php
-    ├── create_organization.php
-    ├── settings.php
-    ├── assets/
-    │   ├── javascript/        # jQuery, Tailwind, Leaflet, and app/ page scripts
-    │   └── images/            # Static images (default event image)
-    └── uploads/
-        └── events/            # Uploaded event images (writable)
+├── public/
+│   ├── account_login.php
+│   ├── account_registration.php
+│   ├── browse.php
+│   ├── create_event.php
+│   ├── create_organization.php
+│   ├── dashboard.php
+│   ├── edit_event.php
+│   ├── event.php
+│   ├── home.php
+│   ├── manage_events.php
+│   ├── organization.php
+│   ├── provider_login.php
+│   ├── settings.php
+│   └── uploads/
+│       └── events/
+│           └── .gitkeep
+└── stop_psqlbat
 ```
 
 How the pieces connect: each page in `public/` has a matching script in `public/assets/javascript/app/`, which calls a PHP handler in `php/app/` through jQuery AJAX. Handlers use `php/db.php` to reach PostgreSQL.
