@@ -6,7 +6,7 @@ Common setup problems and how to fix them. Each entry lists the symptom, the lik
 
 ### `psql` is not recognized
 - **Cause:** The PostgreSQL `bin` folder is not in your PATH.
-- **Fix:** Add it to PATH (e.g. `C:\Program Files\PostgreSQL\18\bin` on Windows), then reopen the terminal. Or call `psql` by its full path.
+- **Fix:** Add it to PATH (e.g. `C:\Program Files\PostgreSQL\18\bin` on Windows), then reopen the terminal. Or call `psql` by its full path. You can also run the scripts from pgAdmin's Query Tool instead.
 
 ### `password authentication failed for user`
 - **Cause:** `DB_USER` or `DB_PASSWORD` in `.env` does not match a PostgreSQL user.
@@ -14,11 +14,11 @@ Common setup problems and how to fix them. Each entry lists the symptom, the lik
 
 ### `connection refused` or `could not connect to server`
 - **Cause:** PostgreSQL is not running, or `DB_HOST` / `DB_PORT` is wrong.
-- **Fix:** Start the PostgreSQL service (on Windows, `start_psql.bat` or the Services app). Confirm `DB_PORT` (default `5432`).
+- **Fix:** Start the PostgreSQL service (on Windows, use the Services app). Confirm `DB_PORT` (default `5432`).
 
 ### `database "grp10_unisyncdb" does not exist`
 - **Cause:** The database was not created, or `DB_NAME` does not match it.
-- **Fix:** Run `psql -U postgres -c "CREATE DATABASE grp10_unisyncdb;"` and make sure `.env` uses the same name.
+- **Fix:** Run `psql -U postgres -c "CREATE DATABASE grp10_unisyncdb;"` (or create it in pgAdmin) and make sure `.env` uses the same name.
 
 ### `relation "..." does not exist`
 - **Cause:** `db/init.sql` was not run, or it ran against a different database.
@@ -29,7 +29,7 @@ Common setup problems and how to fix them. Each entry lists the symptom, the lik
 - **Fix:** Re-run `db/init.sql` (it drops and recreates all tables), then run `db/seed.sql` once. Warning: this erases all existing data.
 
 ### `permission denied for table ...`
-- **Cause:** The user in `.env` has no privileges on the tables, e.g. tables were created by `postgres` and `unisync_app` was never granted access.
+- **Cause:** The user in `.env` has no privileges on the tables, e.g. the tables were created by `postgres` and `unisync_app` was never granted access.
 - **Fix:** Use the `postgres` account for local testing, or grant privileges as described in [`database-roles.md`](database-roles.md).
 
 ## 2. PHP
@@ -69,12 +69,20 @@ Common setup problems and how to fix them. Each entry lists the symptom, the lik
 - **Fix:** Connect to the internet and reload.
 
 ### Icons are missing
-- **Cause:** Font Awesome loads from a CDN and the browser has no internet access.
+- **Cause:** Icons load from an online source and the browser has no internet access.
 - **Fix:** Connect to the internet and reload.
 
 ### Cannot log in
 - **Cause:** Wrong credentials, or the seed data was not loaded.
-- **Fix:** Confirm `db/seed.sql` ran without errors, then log in with a seeded account. Sample login: `<sample email>` / `<sample password>`.
+- **Fix:** Confirm `db/seed.sql` ran without errors, then log in with a sample account, e.g. `testaccount1@gmail.com` / `Password123!`. The full list is in the **Sample Accounts** section of the README. Other seeded accounts use placeholder password hashes and cannot log in.
+
+### Registering a new account fails with a duplicate key error
+- **Cause:** The ID sequence was not reset after the seed data inserted explicit IDs.
+- **Fix:** Run this once, then try again:
+```sql
+SELECT setval(pg_get_serial_sequence('account','account_id'), (SELECT MAX(account_id) FROM account));
+```
+  Re-running `db/init.sql` and `db/seed.sql` also fixes it if the seed script already resets the sequence.
 
 ## 4. Still stuck?
 
