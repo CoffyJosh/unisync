@@ -146,9 +146,24 @@ Open the application in your browser:
 
 The root `index.php` is the entry point and loads the homepage from `public/home.php`.
 
-### Optional: PostgreSQL helper scripts (Windows)
+## Sample Accounts
 
-`start_psql.bat` and `stop_psql.bat` in the project root start and stop a local PostgreSQL server. Edit the paths inside them to match your PostgreSQL installation before use.
+The seed data includes test accounts you can log in with:
+
+| Email | Password |
+|---|---|
+| testaccount1@gmail.com | `Password123!` |
+| testaccount2@gmail.com | `Pass123` |
+| testaccount3@gmail.com | `HelloSekai` |
+| testaccount4@gmail.com | `Kurourushi` |
+| testaccount5@gmail.com | `OpenUpTheSkye` |
+| testaccount6@gmail.com | `MalevolentKitchen` |
+| testaccount7@gmail.com | `HeimerDonger` |
+| testaccount8@gmail.com | `Lol123` |
+| testaccount9@gmail.com | `password246` |
+| testaccount10@gmail.com | `JkLababo123` |
+
+These are demo credentials for testing only.
 
 ## Folder Structure
 

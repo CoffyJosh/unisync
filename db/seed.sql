@@ -127,7 +127,17 @@ INSERT INTO ACCOUNT (account_id, account_name, email, password_hash, account_sta
 (117, 'Andrei Jimenez', 'andrei.jimenez@umak.edu.ph', '$2y$10$jYiGMpLGGnMOZe8kr.Djwy79xBAVw5VrNymZ1lWM7ALbGJn4Kf/OZ', 'active'),
 (118, 'Pauline Galang', 'pauline.galang@umak.edu.ph', '$2y$10$V9RPFZ5HenuWoUTJqngDWAIyT.I4TkubMCFUHA8N6uIlvQub3MoC6', 'active'),
 (119, 'Marco Delos Santos', 'marco.delossantos@umak.edu.ph', '$2y$10$glk9X2lVTSFhSgYKdTmo.xM/nGnbc7q6RRvh1gU6P9QGwVfPZer1i', 'active'),
-(120, 'Camille Aguilar', 'camille.aguilar@umak.edu.ph', '$2y$10$oJ6gHBea.D8tjbRaJIiugVO6aFXfFPwno26orjW.C8JrRCOa6kd8/', 'active');
+(120, 'Camille Aguilar', 'camille.aguilar@umak.edu.ph', '$2y$10$oJ6gHBea.D8tjbRaJIiugVO6aFXfFPwno26orjW.C8JrRCOa6kd8/', 'active'),
+(121, 'Test Account 1',  'testaccount1@gmail.com',  '$2y$10$3ZayrJ8FGCfJAZNJvRnSt.AQq.6.bIstdrZ4bitWcEZTK.OY8aDTq', 'active'),
+(122, 'Test Account 2',  'testaccount2@gmail.com',  '$2y$10$V3SDdkHd0lLJPowxyiviGuBLrCezGw0x376yIoEBdfLrGLqVLebAC', 'active'),
+(123, 'Test Account 3',  'testaccount3@gmail.com',  '$2y$10$88YEnQvzj86UmB2NUHvXxepHv41k/yHPASrYBBP7nBfmSJREDtX/C', 'active'),
+(124, 'Test Account 4',  'testaccount4@gmail.com',  '$2y$10$85N3mtbdRXWProAqIWU3KeikFVQKS6mI60vd2dNWzteRt6p26B6vG', 'active'),
+(125, 'Test Account 5',  'testaccount5@gmail.com',  '$2y$10$pbmnSEyYHElHw.P8OutFpeVdueuarEKvfmJhUMrsxdhVtpyINO73u', 'active'),
+(126, 'Test Account 6',  'testaccount6@gmail.com',  '$2y$10$u961FwQ/gW.Gug7irS2nZ.ykLh9ALoZIEV3ABuG8/EeQTU3MpeQOq', 'active'),
+(127, 'Test Account 7',  'testaccount7@gmail.com',  '$2y$10$UZJ7c2X2YRRUOD5NLcPsJeW02kQ.zl8t7YMpxrClqzk1peHGUTiti', 'active'),
+(128, 'Test Account 8',  'testaccount8@gmail.com',  '$2y$10$sVlaoj1fM7f0NdN1AXeQY.Q5oL3nQ6s.hlUdt9LYg1HhBs5qni1aa', 'active'),
+(129, 'Test Account 9',  'testaccount9@gmail.com',  '$2y$10$Ejdh4B/jbKbVuiD1TLxEWeXXbYC3ibUqqo2O9UkmVJwQ.ahvkHdBe', 'active'),
+(130, 'Test Account 10', 'testaccount10@gmail.com', '$2y$10$.bYWzZ.Na2aZkJ21HnJc3OubyQY0vxYkau.t5/C/VJh49T9QDfdva', 'active');
 
 -- ORGANIZATION
 INSERT INTO ORGANIZATION (organization_id, organization_name, university_name, description, status) VALUES
