@@ -30,9 +30,11 @@ if (!$eventId || $eventId < 1) {
 try {
 
     $query = $pdo->prepare(
-        'DELETE FROM registration
-         WHERE account_id = :account_id
-           AND event_id = :event_id'
+        "UPDATE registration
+        SET status = 'cancelled'
+        WHERE account_id = :account_id
+        AND event_id = :event_id
+        AND status = 'active'"
     );
 
     $query->execute([
