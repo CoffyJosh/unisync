@@ -9,7 +9,7 @@ if (!$eventId || $eventId < 1) {
     exit('Invalid event.');
 }
 
-require_once __DIR__ . '/../php/db.php';
+require_once __DIR__ . '/../config/db.php';
 
 $pdo = $pdo ?? $conn ?? $db ?? null;
 if (!$pdo instanceof PDO) {

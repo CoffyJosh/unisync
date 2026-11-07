@@ -9,7 +9,7 @@ if (!$organizationId || $organizationId < 1) {
     exit('Invalid organization.');
 }
 
-require_once __DIR__ . '/../php/db.php';
+require_once __DIR__ . '/../config/db.php';
 
 $pdo = $pdo ?? $conn ?? $db ?? null;
 if (!$pdo instanceof PDO) {

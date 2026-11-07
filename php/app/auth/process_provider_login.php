@@ -1,7 +1,7 @@
 
 <?php
 
-require_once __DIR__ . '/../../db.php';
+require_once __DIR__ . '/../../../config/db.php';
 
 // Redirect accounts that are already logged in.
 if (isset($_SESSION['account_id'])) {

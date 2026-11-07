@@ -26,3 +26,20 @@ try {
 } catch (PDOException $e) {
     die("Database Connection Failed: " . $e->getMessage());
 }
+
+// Tell PostgreSQL which account is acting, so the row-level security policies
+// in db/access-control.sql can check that account's role in each organization.
+// An empty value means "not logged in". Do not switch this connection to
+// PDO::ATTR_PERSISTENT, or the value could leak between requests.
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+$currentAccountId = isset($_SESSION['account_id']) ? (string) (int) $_SESSION['account_id'] : '';
+
+try {
+    $pdo->prepare("SELECT set_config('app.account_id', ?, false)")
+        ->execute([$currentAccountId]);
+} catch (PDOException $e) {
+    die("Database Session Setup Failed: " . $e->getMessage());
+}

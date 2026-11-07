@@ -256,7 +256,7 @@ unisync/
             └── .gitkeep
 ```
 
-How the pieces connect: each page in `public/` has a matching script in `public/assets/javascript/app/`, which calls a PHP handler in `php/app/` through jQuery AJAX. Handlers use `php/db.php` to reach PostgreSQL.
+How the pieces connect: each page in `public/` has a matching script in `public/assets/javascript/app/`, which calls a PHP handler in `php/app/` through jQuery AJAX. Handlers use `config/db.php` to reach PostgreSQL.
 
 ## Application User Roles
 

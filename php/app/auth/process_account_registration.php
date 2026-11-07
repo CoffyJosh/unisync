@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../db.php';
+require_once __DIR__ . '/../../../config/db.php';
 
 // Determine which portal the registration came from.
 $isProviderRegistration = ($_GET['redirect'] ?? '') === 'provider';

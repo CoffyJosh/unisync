@@ -19,7 +19,7 @@ function removeSavedImage($path) {
 }
 
 try {
-    require_once __DIR__ . '/../../db.php';
+    require_once __DIR__ . '/../../../config/db.php';
     $pdo = $pdo ?? $conn ?? $db ?? null;
     if (!$pdo instanceof PDO) {
         throw new RuntimeException('Database connection is unavailable.');

@@ -1,4 +1,3 @@
-
 -- UniSync database initialization
 -- PostgreSQL
 -- WARNING: This script DROPS the existing UniSync tables and their data.
@@ -47,6 +46,12 @@ CREATE TABLE ORGANIZATION (
 
 
 -- 3. MEMBERSHIP
+-- status lifecycle:
+--   pending  -> request to join, awaiting Admin/Manager approval
+--   active   -> approved member
+--   rejected -> request denied (row kept for history; user may re-request)
+--   inactive -> left the organization
+--   deleted  -> removed/kicked
 CREATE TABLE MEMBERSHIP (
     membership_id    SERIAL PRIMARY KEY,
     account_id       INTEGER NOT NULL,
@@ -70,7 +75,11 @@ CREATE TABLE MEMBERSHIP (
         CHECK (role IN ('Admin', 'Manager', 'Member')),
 
     CONSTRAINT chk_membership_status
-        CHECK (status IN ('active', 'inactive', 'deleted'))
+        CHECK (status IN ('pending', 'active', 'rejected', 'inactive', 'deleted')),
+
+    -- A pending or rejected request can never carry elevated privileges.
+    CONSTRAINT chk_membership_pending_role
+        CHECK (status NOT IN ('pending', 'rejected') OR role = 'Member')
 );
 
 
@@ -217,6 +226,11 @@ CREATE INDEX idx_membership_organization
 
 CREATE INDEX idx_membership_account
     ON MEMBERSHIP(account_id);
+
+-- Fast lookup of join requests awaiting review for an organization.
+CREATE INDEX idx_membership_pending
+    ON MEMBERSHIP(organization_id)
+    WHERE status = 'pending';
 
 CREATE INDEX idx_event_organization
     ON EVENT(organization_id);
