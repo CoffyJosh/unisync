@@ -26,7 +26,7 @@ $initials = substr($initials, 0, 3);
 
 $membershipLabel = $isMember
     ? ucfirst(strtolower($membership['role']))
-    : 'Guest';
+    : ($hasPendingRequest ? 'Pending' : 'Guest');
 
 ?>
 
@@ -100,7 +100,19 @@ $membershipLabel = $isMember
                 <!-- Membership / Management Actions (right side, stacked) -->
                 <div class="flex flex-col gap-2 shrink-0 w-full sm:w-40">
 
-                    <?php if (!$isMember): ?>
+                    <?php if ($hasPendingRequest): ?>
+
+                        <button
+                            type="button"
+                            id="cancelJoinRequest"
+                            data-organization-id="<?= (int) $organizationId ?>"
+                            class="w-full inline-flex items-center justify-center gap-1.5 border border-white/30 text-white hover:bg-white/10 text-xs font-semibold px-3 py-2 rounded-lg transition"
+                        >
+                            <i class="fa-solid fa-xmark"></i>
+                            Cancel Request
+                        </button>
+
+                    <?php elseif (!$isMember): ?>
 
                         <button
                             type="button"
@@ -109,7 +121,7 @@ $membershipLabel = $isMember
                             class="w-full inline-flex items-center justify-center gap-1.5 bg-white text-[#142C4C] hover:bg-blue-50 text-xs font-semibold px-3 py-2 rounded-lg transition"
                         >
                             <i class="fa-solid fa-user-plus"></i>
-                            Join Organization
+                            Request to Join
                         </button>
 
                     <?php else: ?>
@@ -180,15 +192,18 @@ $membershipLabel = $isMember
                     Your Membership
                 </p>
 
-                <p class="text-2xl font-extrabold mt-2 <?= $isMember ? 'text-emerald-600' : 'text-slate-500' ?>">
+                <p class="text-2xl font-extrabold mt-2 <?= $isMember ? 'text-emerald-600' : ($hasPendingRequest ? 'text-amber-600' : 'text-slate-500') ?>">
                     <?= e($membershipLabel) ?>
                 </p>
 
                 <p class="text-xs text-slate-400 mt-1">
-                    <?= $isMember
-                        ? 'Your role in this organization'
-                        : 'You are not a member of this organization'
-                    ?>
+                    <?php if ($isMember): ?>
+                        Your role in this organization
+                    <?php elseif ($hasPendingRequest): ?>
+                        Your request is awaiting Admin approval
+                    <?php else: ?>
+                        You are not a member of this organization
+                    <?php endif; ?>
                 </p>
             </div>
 
@@ -217,6 +232,11 @@ $membershipLabel = $isMember
                         data-tab="members">
                     Members
                     <span class="ml-1 text-xs text-slate-400">(<?= count($members) ?>)</span>
+                    <?php if ($isAdmin && !empty($pendingMembers)): ?>
+                        <span class="ml-1 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+                            <?= count($pendingMembers) ?>
+                        </span>
+                    <?php endif; ?>
                 </button>
 
             </div>
@@ -460,14 +480,43 @@ $membershipLabel = $isMember
             <!-- MEMBERS TAB -->
             <div id="tab-members" class="org-panel hidden py-8">
 
-                <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-[#1E3A5F]">
-                        Organization Members
-                    </h2>
-                    <p class="text-sm text-slate-500 mt-1">
-                        Meet the students who are part of this organization.
-                    </p>
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+
+                    <div>
+                        <h2 class="text-2xl font-bold text-[#1E3A5F]">
+                            Organization Members
+                        </h2>
+                        <p class="text-sm text-slate-500 mt-1">
+                            Meet the students who are part of this organization.
+                        </p>
+                    </div>
+
+                    <?php if ($isAdmin): ?>
+                        <!-- Admin-only toggle: approved members / pending join requests -->
+                        <div id="membersViewToggle"
+                             data-organization-id="<?= (int) $organizationId ?>"
+                             class="inline-flex shrink-0 rounded-lg bg-slate-100 p-1">
+
+                            <button type="button"
+                                    data-view="members"
+                                    class="members-view-btn px-4 py-1.5 rounded-md text-sm font-semibold bg-white text-[#1E3A5F] shadow-sm">
+                                Members
+                            </button>
+
+                            <button type="button"
+                                    data-view="requests"
+                                    class="members-view-btn px-4 py-1.5 rounded-md text-sm font-semibold text-slate-500 hover:text-[#1E3A5F]">
+                                Requests
+                                <span class="ml-1 text-xs <?= !empty($pendingMembers) ? 'text-amber-600 font-bold' : 'text-slate-400' ?>">(<?= count($pendingMembers) ?>)</span>
+                            </button>
+
+                        </div>
+                    <?php endif; ?>
+
                 </div>
+
+                <!-- Approved members -->
+                <div id="members-view-members">
 
                 <?php if (!empty($members)): ?>
 
@@ -602,6 +651,97 @@ $membershipLabel = $isMember
                         <p class="text-sm text-slate-500 mt-2">
                             There are currently no registered members in this organization.
                         </p>
+
+                    </div>
+
+                <?php endif; ?>
+
+                </div>
+
+                <?php if ($isAdmin): ?>
+
+                    <!-- Pending join requests (Admin only) -->
+                    <div id="members-view-requests" class="hidden">
+
+                        <?php if (!empty($pendingMembers)): ?>
+
+                            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+
+                                <div class="flex flex-col">
+
+                                    <?php foreach ($pendingMembers as $pending): ?>
+
+                                        <div class="request-row flex items-center gap-4 p-5 border-b border-slate-100">
+
+                                            <div class="w-12 h-12 shrink-0 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
+                                                <?= e(strtoupper(substr($pending['account_name'], 0, 1))) ?>
+                                            </div>
+
+                                            <div class="flex-1 min-w-0">
+
+                                                <p class="font-bold text-slate-800 truncate">
+                                                    <?= e($pending['account_name']) ?>
+                                                </p>
+
+                                                <p class="text-xs text-slate-400 mt-1">
+                                                    <?php if (!empty($pending['requested_date'])): ?>
+                                                        Requested <?= e(date('M j, Y', strtotime($pending['requested_date']))) ?>
+                                                    <?php else: ?>
+                                                        Request date unavailable
+                                                    <?php endif; ?>
+                                                </p>
+
+                                            </div>
+
+                                            <div class="flex items-center justify-end gap-2 shrink-0">
+
+                                                <button
+                                                    type="button"
+                                                    class="review-membership inline-flex items-center justify-center h-9 w-24 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold"
+                                                    data-decision="approve"
+                                                    data-membership-id="<?= (int) $pending['membership_id'] ?>"
+                                                    data-member-name="<?= e($pending['account_name']) ?>"
+                                                >
+                                                    Accept
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    class="review-membership inline-flex items-center justify-center h-9 w-24 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold"
+                                                    data-decision="reject"
+                                                    data-membership-id="<?= (int) $pending['membership_id'] ?>"
+                                                    data-member-name="<?= e($pending['account_name']) ?>"
+                                                >
+                                                    Reject
+                                                </button>
+
+                                            </div>
+
+                                        </div>
+
+                                    <?php endforeach; ?>
+
+                                </div>
+
+                            </div>
+
+                        <?php else: ?>
+
+                            <div class="bg-white border border-slate-200 rounded-2xl p-12 text-center">
+
+                                <div class="text-4xl mb-4">📭</div>
+
+                                <h3 class="text-lg font-bold text-slate-800">
+                                    No Pending Requests
+                                </h3>
+
+                                <p class="text-sm text-slate-500 mt-2">
+                                    New requests to join this organization will appear here.
+                                </p>
+
+                            </div>
+
+                        <?php endif; ?>
 
                     </div>
 

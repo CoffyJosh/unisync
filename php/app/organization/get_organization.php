@@ -1,4 +1,3 @@
-
 <?php
 
 require_once __DIR__ . '/../../../config/db.php';
@@ -93,8 +92,26 @@ if ($accountId !== null) {
 }
 
 // Membership status
-// Membership status
 $isMember = $membership !== false && $membership !== null;
+
+// Does the current account have a join request awaiting approval?
+$hasPendingRequest = false;
+
+if ($accountId !== null && !$isMember) {
+    $pendingCheckStmt = $pdo->prepare("
+        SELECT 1
+        FROM membership
+        WHERE account_id = :account_id
+            AND organization_id = :organization_id
+            AND status = 'pending'
+    ");
+    $pendingCheckStmt->execute([
+        ':account_id' => $accountId,
+        ':organization_id' => $organizationId
+    ]);
+
+    $hasPendingRequest = (bool) $pendingCheckStmt->fetchColumn();
+}
 
 // Normalize role
 $role = $membership
@@ -138,6 +155,33 @@ $memberStmt->execute([
 ]);
 
 $members = $memberStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Pending join requests (Admins only), oldest request first
+$pendingMembers = [];
+
+if ($isAdmin) {
+    $pendingSql = "
+        SELECT
+            m.membership_id,
+            a.account_id,
+            a.account_name,
+            m.membership_date AS requested_date
+        FROM membership m
+        INNER JOIN account a
+            ON m.account_id = a.account_id
+        WHERE m.organization_id = :organization_id
+            AND m.status = 'pending'
+            AND a.account_status = 'active'
+        ORDER BY m.membership_date ASC, m.membership_id ASC
+    ";
+
+    $pendingStmt = $pdo->prepare($pendingSql);
+    $pendingStmt->execute([
+        ':organization_id' => $organizationId
+    ]);
+
+    $pendingMembers = $pendingStmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
 // Organization events and schedules
 $eventSql = "

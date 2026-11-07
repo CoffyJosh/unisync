@@ -1,4 +1,3 @@
-
 <?php
 
 require_once __DIR__ . '/../../../config/db.php';
@@ -78,7 +77,9 @@ try {
         respond(false, 'This organization no longer exists.', 404, ['organization_gone' => true]);
     }
 
-    // Insert membership or reactivate an existing inactive membership.
+    // Request to join. A new row is created only if the account has never
+    // had a membership here; otherwise the existing row is reused and moved
+    // back to 'pending' (only from rejected / inactive / deleted).
     $membershipStmt = $pdo->prepare("
         INSERT INTO membership (
             account_id,
@@ -90,14 +91,14 @@ try {
             :account_id,
             :organization_id,
             'Member',
-            'active'
+            'pending'
         )
         ON CONFLICT (account_id, organization_id)
         DO UPDATE SET
             role = 'Member',
-            status = 'active',
+            status = 'pending',
             membership_date = CURRENT_DATE
-        WHERE membership.status <> 'active'
+        WHERE membership.status IN ('rejected', 'inactive', 'deleted')
         RETURNING membership_id
     ");
 
@@ -109,10 +110,29 @@ try {
     $membershipId = $membershipStmt->fetchColumn();
 
     if (!$membershipId) {
+        // Nothing changed, so the row is already 'pending' or 'active'.
+        $currentStmt = $pdo->prepare("
+            SELECT status
+            FROM membership
+            WHERE account_id = :account_id
+              AND organization_id = :organization_id
+        ");
+
+        $currentStmt->execute([
+            ':account_id' => $accountId,
+            ':organization_id' => $organizationId
+        ]);
+
+        $currentStatus = $currentStmt->fetchColumn();
+
+        if ($currentStatus === 'pending') {
+            respond(false, 'Your request to join is already pending approval.', 409);
+        }
+
         respond(false, 'You are already a member of this organization.', 409);
     }
 
-    respond(true, 'You have successfully joined the organization.');
+    respond(true, 'Your request has been sent. An Admin will review it.');
 
 } catch (PDOException $e) {
 

@@ -58,12 +58,12 @@ $(document).ready(function () {
         }
     });
 
-    // Join Organization
+    // Request to Join Organization (creates a pending request)
     $('#joinOrganization').on('click', function () {
         const button = $(this);
         const organizationId = button.data('organization-id');
 
-        button.prop('disabled', true).text('Joining...');
+        button.prop('disabled', true).text('Sending...');
 
         $.ajax({
             url: '../php/app/organization/join_organization.php',
@@ -82,7 +82,7 @@ $(document).ready(function () {
                 if (response.success) {
                     window.location.reload();
                 } else {
-                    button.prop('disabled', false).text('Join Organization');
+                    button.prop('disabled', false).text('Request to Join');
                 }
             },
             error: function (xhr) {
@@ -92,9 +92,140 @@ $(document).ready(function () {
                     return;
                 }
 
-                alert(response?.message || 'Unable to join organization.');
+                alert(response?.message || 'Unable to send your request.');
 
-                button.prop('disabled', false).text('Join Organization');
+                button.prop('disabled', false).text('Request to Join');
+            }
+        });
+    });
+
+    // Cancel a pending join request (the membership becomes 'deleted')
+    $('#cancelJoinRequest').on('click', function () {
+        const button = $(this);
+        const originalHtml = button.html();
+        const organizationId = button.data('organization-id');
+
+        if (!confirm('Cancel your request to join this organization?')) {
+            return;
+        }
+
+        button.prop('disabled', true).text('Cancelling...');
+
+        $.ajax({
+            url: '../php/app/organization/cancel_join_request.php',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                organization_id: organizationId
+            },
+            success: function (response) {
+                if (handleOrgGone(response)) {
+                    return;
+                }
+
+                alert(response.message);
+
+                // Reload either way so the page shows the real current state
+                // (e.g. the request was approved while the page was open).
+                window.location.reload();
+            },
+            error: function (xhr) {
+                const response = xhr.responseJSON;
+
+                if (handleOrgGone(response)) {
+                    return;
+                }
+
+                alert(response?.message || 'Unable to cancel your request.');
+
+                button.prop('disabled', false).html(originalHtml);
+            }
+        });
+    });
+
+    // Admin toggle on the Members tab: approved members <-> pending requests
+    const $viewToggle = $('#membersViewToggle');
+
+    if ($viewToggle.length) {
+        const viewKey = 'unisync_org_members_view_' + $viewToggle.data('organization-id');
+
+        function showMembersView(view) {
+            const showRequests = view === 'requests';
+
+            $('#members-view-members').toggleClass('hidden', showRequests);
+            $('#members-view-requests').toggleClass('hidden', !showRequests);
+
+            $('.members-view-btn').each(function () {
+                const isActive = $(this).data('view') === view;
+
+                $(this)
+                    .toggleClass('bg-white text-[#1E3A5F] shadow-sm', isActive)
+                    .toggleClass('text-slate-500 hover:text-[#1E3A5F]', !isActive);
+            });
+
+            try { sessionStorage.setItem(viewKey, view); } catch (err) {}
+        }
+
+        $('.members-view-btn').on('click', function () {
+            showMembersView($(this).data('view'));
+        });
+
+        // Restore the last view (e.g. after accepting or rejecting a request).
+        let savedView = null;
+        try { savedView = sessionStorage.getItem(viewKey); } catch (err) {}
+
+        if (savedView === 'requests') {
+            showMembersView('requests');
+        }
+    }
+
+    // Accept / Reject a pending join request (Admin only)
+    $(document).on('click', '.review-membership', function () {
+        const button = $(this);
+        const decision = button.data('decision');
+        const membershipId = button.data('membership-id');
+        const memberName = button.data('member-name');
+        const $rowButtons = button.closest('.request-row').find('.review-membership');
+        const originalText = button.text();
+
+        const question = decision === 'approve'
+            ? 'Accept ' + memberName + ' into this organization?'
+            : 'Reject ' + memberName + '\'s request to join?';
+
+        if (!confirm(question)) {
+            return;
+        }
+
+        $rowButtons.prop('disabled', true);
+        button.text(decision === 'approve' ? 'Accepting...' : 'Rejecting...');
+
+        $.ajax({
+            url: '../php/app/organization/review_membership.php',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                membership_id: membershipId,
+                decision: decision
+            },
+            success: function (response) {
+                if (handleOrgGone(response)) {
+                    return;
+                }
+
+                alert(response.message);
+
+                // Reload either way so the lists and counts reflect the real state.
+                window.location.reload();
+            },
+            error: function (xhr) {
+                if (handleOrgGone(xhr.responseJSON)) {
+                    return;
+                }
+
+                alert(xhr.responseJSON?.message || 'Unable to review this request.');
+
+                $rowButtons.prop('disabled', false);
+                button.text(originalText);
             }
         });
     });
