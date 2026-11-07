@@ -27,7 +27,7 @@ A University Event Scheduling and Registration System. Students discover organiz
 - Admins accept or reject join requests
 - Cancel your own pending join request
 - Leave organizations, with automatic Admin succession
-- Role management and member removal (Admin / Manager)
+- Role management and member removal (Admin)
 - Edit and delete organizations (Admin)
 - Create, edit, and delete events with multiple schedules and map-pinned venues
 - Event status derived from schedules (Pending, Confirmed, Completed, Cancelled)
@@ -75,9 +75,7 @@ psql -U postgres -d grp10_unisyncdb -f db/init.sql
 psql -U postgres -d grp10_unisyncdb -f db/seed.sql
 ```
 
-The seed data contains 100+ student accounts, 30 organizations, 50 events, and venues with real addresses and map coordinates. The `NOTIFICATION` table is intentionally left empty.
-
-> `db/migrate_student_to_account.sql` is only for upgrading an older database that still has the `STUDENT` table. A fresh install does **not** need it.
+The seed data contains 100+ student accounts, 30 organizations, 50 events, and venues with real addresses and map coordinates.
 
 ### 5. Configure the environment
 
