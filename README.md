@@ -35,6 +35,16 @@ A University Event Scheduling and Registration System. Students discover organiz
 - Event registration and cancellation
 - Attendee list with removal for Admins and Managers
 
+## Documentation
+
+| Document | Description |
+|---|---|
+| [Progress Documentation](docs/documentation.pdf) | System development progress, database implementation, application evidence, issues and resolutions, cross-group verification, and AI usage declaration. |
+| [Database Documentation](docs/database.md) | Database structure, columns, keys, constraints, and ERD. |
+| [Database Roles](docs/database-roles.md) | PostgreSQL users, group roles, and database privileges. |
+| [Application User Roles](docs/user-roles.md) | Application roles and their responsibilities. |
+| [Troubleshooting Guide](docs/troubleshooting.md) | Common setup and application issues. |
+
 ## Prerequisites
 
 - PHP 8.1 or newer with the `pdo_pgsql`, `fileinfo`, and `mbstring` extensions enabled
@@ -186,94 +196,20 @@ These are demo credentials for testing only.
 
 ```text
 unisync/
-├── .env.example
-├── .gitignore
-├── README.md
-├── index.php
-├── config/
-│   ├── db.php
-│   ├── db_connection_test.php
-│   └── mail.php
-├── db/
-│   ├── access-control.sql
-│   ├── init.sql
-│   └── seed.sql
-├── docs/
-│   ├── database-roles.md
-│   ├── database.md
-│   ├── troubleshooting.md
-│   └── user-roles.md
-├── php/
-│   ├── app/
-│   │   ├── account/
-│   │   │   └── settings.php
-│   │   ├── auth/
-│   │   │   ├── logout.php
-│   │   │   ├── process_account_login.php
-│   │   │   ├── process_account_registration.php
-│   │   │   └── process_provider_login.php
-│   │   ├── browse/
-│   │   │   └── get_browse_results.php
-│   │   ├── dashboard/
-│   │   │   ├── cancel_registration.php
-│   │   │   └── get_dashboard.php
-│   │   ├── event/
-│   │   │   ├── create_event.php
-│   │   │   ├── get_create_event.php
-│   │   │   ├── get_event.php
-│   │   │   └── update_event.php
-│   │   ├── home/
-│   │   │   └── get_featured_events.php
-│   │   └── organization/
-│   │       ├── cancel_join_request.php
-│   │       ├── delete_organization.php
-│   │       ├── get_organization.php
-│   │       ├── join_organization.php
-│   │       ├── kick_member.php
-│   │       ├── leave_organization.php
-│   │       ├── review_membership.php
-│   │       ├── save_organization.php
-│   │       ├── update_member_role.php
-│   │       └── update_organization.php
-│   ├── components/
-│   │   ├── footer.php
-│   │   └── navbar.php
-│   └── services/
-│       └── emailer.php
-└── public/
-    ├── account_login.php
-    ├── account_registration.php
-    ├── browse.php
-    ├── create_event.php
-    ├── create_organization.php
-    ├── dashboard.php
-    ├── edit_event.php
-    ├── event.php
-    ├── home.php
-    ├── manage_events.php
-    ├── organization.php
-    ├── provider_login.php
-    ├── settings.php
-    └── assets/
-        ├── images/
-        │   └── default-event.jpg
-        └── javascript/
-            ├── jquery.js
-            ├── leaflet.js
-            ├── tailwind.js
-            └── app/
-                ├── browse.js
-                ├── create_event.js
-                ├── dashboard.js
-                ├── edit_event.js
-                ├── event.js
-                ├── home.js
-                ├── login.js
-                ├── manage_events.js
-                ├── organization.js
-                ├── provider_login.js
-                ├── registration.js
-                └── settings.js
+├── config/                  # Database connection and application configuration
+├── db/                      # UniSync database initialization, seed data, and access-control scripts
+├── db-access-control/       # Cross-group database roles, privileges, and access-control verification
+├── db-backup-recovery/      # Cross-group backup plans, reports, and recovery verification
+├── db-maintenance/          # Cross-group database maintenance and query analysis documentation
+├── docs/                    # Project documentation, including the progress PDF and database guides
+├── php/                     # Backend PHP application code
+│   ├── app/                 # PHP request handlers and application logic
+│   ├── components/          # Reusable PHP interface components
+│   └── services/            # Shared application services
+├── public/                  # Publicly accessible application pages and assets
+│   └── assets/              # Frontend resources, images, and JavaScript
+│       └── javascript/      # jQuery, libraries, and page-specific scripts
+└── index.php                # Root application entry point
 ```
 
 How the pieces connect: each page in `public/` has a matching script in `public/assets/javascript/app/`, which calls a PHP handler in `php/app/` through jQuery AJAX. Handlers use `config/db.php` to reach PostgreSQL.
@@ -350,7 +286,13 @@ More detail: [`docs/troubleshooting.md`](docs/troubleshooting.md).
 
 ## AI Usage
 
-AI tools were used during development. The full declaration (tools, tasks, and how the output was validated) is in the progress documentation PDF.
+AI tools were used to assist with development, database documentation, debugging, and technical explanations.
+
+- **Claude:** Coding assistance, debugging, and implementation support.
+- **Gemini:** Technical explanations and database-related assistance.
+- **ChatGPT:** Documentation assistance, explanations, and development support.
+
+All AI-generated suggestions and outputs were reviewed and validated by the group. The detailed declaration is available in the [Progress Documentation](docs/documentation.pdf).
 
 ## License
 
